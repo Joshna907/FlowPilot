@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Edge, Node } from "@xyflow/react";
 import { create } from "zustand";
 import { SetterFunction } from "./types";
+import _ from "lodash";
 
 export enum NodeType {
   INITIAL = "INITIAL",
@@ -33,6 +34,7 @@ type WorkflowState = {
   selectedNodeId: string | undefined;
   setSelectedNodeId: (nodeId: string) => void;
   changeSelectedNodeType: (type: NodeType) => void;
+  addNewEmptyNode: () => void;
 };
 
 const initialNodes: Node[] = [
@@ -88,6 +90,65 @@ export const useWorkflow = create<WorkflowState>((set) => ({
       const allNodesClone = [...allNodes];
       allNodesClone[foundNodeIndex] = updatedFoundNode;
       return { nodes: allNodesClone };
+    });
+  },
+  addNewEmptyNode: () => {
+    set((s) => {
+      const lastNodeId = s.nodes[s.nodes.length - 1].id;
+      const newNodeId = `n${Math.random().toString(36).slice(2, 10)}`;
+
+      // update nodes
+      const nextNodes = _.cloneDeep(s.nodes);
+      const addIndex = nextNodes.findIndex((n) => n.id === lastNodeId);
+      const insertIndex =
+        addIndex === -1 ? Math.max(nextNodes.length - 1, 0) : addIndex;
+
+      const previousNode = nextNodes[insertIndex - 1];
+      const inferredX = previousNode
+        ? (previousNode.position?.x ?? 0) + WORKFLOW_GAP_X
+        : 0;
+      const inferredY = previousNode ? (previousNode.position?.y ?? 0) : 0;
+
+      nextNodes.splice(insertIndex, 0, {
+        id: newNodeId,
+        position: { x: inferredX, y: inferredY },
+        type: NodeType.EMPTY,
+        data: { label: "Node" },
+      });
+
+      // update positioning
+      const addNode = nextNodes[insertIndex + 1];
+      if (addNode) {
+        addNode.position = {
+          x: inferredX + WORKFLOW_GAP_X,
+          y: inferredY,
+        };
+      }
+
+      // update egdes
+      let nextEdges = _.cloneDeep(s.edges);
+      const edgeToAdd = nextEdges.find((e) => e.target === lastNodeId);
+      // edged without old connections
+      nextEdges = edgeToAdd
+        ? nextEdges.filter((e) => e.id !== edgeToAdd.id)
+        : nextEdges;
+
+      const prevSourceId = edgeToAdd?.source;
+      if (prevSourceId) {
+        nextEdges.push({
+          id: `${prevSourceId}-${newNodeId}`,
+          source: prevSourceId,
+          target: newNodeId,
+          type: "step",
+        });
+      }
+      nextEdges.push({
+        id: `${newNodeId}-${lastNodeId}`,
+        source: newNodeId,
+        target: lastNodeId,
+        type: "step",
+      });
+      return { edges: nextEdges, nodes: nextNodes };
     });
   },
 }));
