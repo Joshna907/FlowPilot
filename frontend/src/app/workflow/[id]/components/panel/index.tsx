@@ -10,15 +10,15 @@ import { NodeType, useWorkflow } from "@/stores/useWorkflowStore";
 import { ArrowRight } from "lucide-react";
 
 function getNodeOptions(nodeType: NodeType) {
-  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL) {
+  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL_TRIGGER) {
     return [
       {
-        nodeType: NodeType.MANUAL,
+        nodeType: NodeType.MANUAL_TRIGGER,
         title: "Manual",
         description: "Run Manually upon clicking the Trigger.",
       },
       {
-        nodeType: NodeType.WEBHOOK,
+        nodeType: NodeType.WEBHOOK_TRIGGER,
         title: "Webhook",
         description: "Run when a webhook is hit.",
       },
@@ -26,7 +26,7 @@ function getNodeOptions(nodeType: NodeType) {
   }
   return [
     {
-      nodeType: NodeType.EMAIL,
+      nodeType: NodeType.SEND_EMAIL,
       title: "Email",
       description: "Email",
     },
@@ -34,14 +34,14 @@ function getNodeOptions(nodeType: NodeType) {
 }
 
 function getPanelTitle(nodeType: NodeType) {
-  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL) {
+  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL_TRIGGER) {
     return "What triggers this workflow?";
   }
   return "What does this Node Do ?";
 }
 
 function getPanelDescription(nodeType: NodeType) {
-  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL) {
+  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL_TRIGGER) {
     return "A trigger is a step that starts your workflow";
   }
   return "Choose what step you want this node to perform.";

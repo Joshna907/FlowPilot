@@ -11,14 +11,15 @@ import { Edge, Node } from "@xyflow/react";
 import { create } from "zustand";
 import { SetterFunction } from "./types";
 import _ from "lodash";
+import { v4 as uuidv4 } from "uuid";
 
 export enum NodeType {
+  ADD_NODE = "ADD_NODE",
   INITIAL = "INITIAL",
   EMPTY = "EMPTY",
-  MANUAL = "MANUAL",
-  ADD = "ADD",
-  WEBHOOK = "WEBHOOK",
-  EMAIL = "EMAIL",
+  SEND_EMAIL = "SEND_EMAIL",
+  WEBHOOK_TRIGGER = "WEBHOOK_TRIGGER",
+  MANUAL_TRIGGER = "MANUAL_TRIGGER",
 }
 
 export const WORKFLOW_GAP_X = 200;
@@ -26,13 +27,42 @@ export const WORKFLOW_GAP_X = 200;
 export const nodeTypes = {
   [NodeType.INITIAL]: InitialNode,
   [NodeType.EMPTY]: EmptyNode,
-  [NodeType.MANUAL]: ManualTriggerNode,
-  [NodeType.ADD]: AddNode,
-  [NodeType.WEBHOOK]: WebhookNode,
-  [NodeType.EMAIL]: EmailNode,
+  [NodeType.MANUAL_TRIGGER]: ManualTriggerNode,
+  [NodeType.ADD_NODE]: AddNode,
+  [NodeType.WEBHOOK_TRIGGER]: WebhookNode,
+  [NodeType.SEND_EMAIL]: EmailNode,
 } as const;
 
+const initialNodes: Node[] = [
+  {
+    id: uuidv4(),
+    position: { x: 0, y: 0 },
+    type: NodeType.INITIAL,
+    data: { label: "Node 1" },
+  },
+  {
+    id: uuidv4(),
+    position: { x: 0 + WORKFLOW_GAP_X, y: 6 },
+    type: NodeType.ADD_NODE,
+    data: {},
+  },
+];
+
+const initialEdges: Edge[] = [
+  {
+    id: `${initialNodes[0].id}-${initialNodes[1].id}`,
+    source: initialNodes[0].id,
+    target: initialNodes[1].id,
+    type: "step",
+  },
+];
+
 type WorkflowState = {
+  workflow: {
+    name: string;
+    id: string;
+  };
+  setWorkflow: (input: { name: string; id: string }) => void;
   nodes: Node[];
   edges: Edge[];
   setNodes: (nodes: SetterFunction<Node[]>) => void;
@@ -43,33 +73,16 @@ type WorkflowState = {
   addNewEmptyNode: () => void;
 };
 
-const initialNodes: Node[] = [
-  {
-    id: "n1",
-    position: { x: 0, y: 0 },
-    type: NodeType.INITIAL,
-    data: { label: "Node 1" },
-  },
-  {
-    id: "nE",
-    position: { x: 0 + WORKFLOW_GAP_X, y: 6 },
-    type: NodeType.ADD,
-    data: {},
-  },
-];
-
-const initialEdges: Edge[] = [
-  {
-    id: "n1-nE",
-    source: "n1",
-    target: "nE",
-    type: "step",
-  },
-];
-
 export const useWorkflow = create<WorkflowState>((set) => ({
   nodes: initialNodes,
   edges: initialEdges,
+  workflow: {
+    id: "",
+    name: "",
+  },
+  setWorkflow: (input: { name: string; id: string }) => {
+    set({ workflow: input });
+  },
   setNodes: (nodes) =>
     set((state) => ({
       nodes: typeof nodes === "function" ? nodes(state.nodes) : nodes,
@@ -101,7 +114,7 @@ export const useWorkflow = create<WorkflowState>((set) => ({
   addNewEmptyNode: () => {
     set((s) => {
       const lastNodeId = s.nodes[s.nodes.length - 1].id;
-      const newNodeId = `n${Math.random().toString(36).slice(2, 10)}`;
+      const newNodeId = uuidv4();
 
       // update nodes
       const nextNodes = _.cloneDeep(s.nodes);

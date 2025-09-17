@@ -9,6 +9,7 @@ datasource db {
 }
 
 enum NodeType {
+  ADD_NODE
   INITIAL
   EMPTY
   SEND_EMAIL
@@ -90,7 +91,7 @@ model Node {
   nodeType      NodeType
   positionX     Int
   positionY     Int
-  metadata      String?
+  metadata      Json?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   outgoingEdges Edge[]    @relation("edgeSource")

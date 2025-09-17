@@ -6,12 +6,12 @@ export const nodeSchema = z.object({
   nodeType: z.enum(Object.values(NodeType)),
   positionX: z.number(),
   positionY: z.number(),
-  metadata: z.string(),
+  metadata: z.object(),
 });
 
 export const edgeSchema = z.object({
   id: z.string(),
   sourceNodeId: z.string(),
   targetNodeId: z.string(),
-  edgeType: z.enum(Object.values(EdgeType)),
+  edgeType: z.string(),
 });

@@ -29,6 +29,9 @@ export default function Playground({ workflow }: { workflow: ApiWorkflow }) {
   const edges = useWorkflow((state) => state.edges);
   const setNodes = useWorkflow((state) => state.setNodes);
   const setEdges = useWorkflow((state) => state.setEdges);
+  const setWorkflow = useWorkflow((state) => state.setWorkflow);
+
+  console.log({ nodes, edges });
 
   useEffect(() => {
     const apiNodes = workflow.nodes;
@@ -41,7 +44,12 @@ export default function Playground({ workflow }: { workflow: ApiWorkflow }) {
       const convertedEdges = apiEdges.map(convertApiEdgeToState);
       setEdges(convertedEdges);
     }
-  }, [workflow, setEdges, setNodes]);
+
+    setWorkflow({
+      id: workflow.id,
+      name: workflow.name,
+    });
+  }, [workflow, setEdges, setNodes, setWorkflow]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange<Node>[]) =>

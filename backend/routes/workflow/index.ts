@@ -5,7 +5,7 @@ import { edgeSchema, nodeSchema } from "./types";
 import { prisma } from "../../utils/db";
 import { ErrorMessage } from "../../utils/errorMessage";
 import _ from "lodash";
-import type { Edge, Node } from "../../generated/prisma";
+import { EdgeType, type Edge, type Node } from "../../generated/prisma";
 
 export const router = express.Router();
 
@@ -80,19 +80,55 @@ router.put("/update/:id", async (req, res) => {
       .json({ success: false, error: ErrorMessage.PARSING });
   }
 
-  const updatedWorkflow = await prisma.workflow.update({
-    where: { id: data.id },
-    data: {
-      ...(data.name && { name: data.name }),
-    },
-  });
+  const result = await prisma.$transaction(async (tx) => {
+    const updatedWorkflow = await tx.workflow.update({
+      where: { id: data.id },
+      data: {
+        ...(data.name && { name: data.name }),
+      },
+    });
 
-  let updatedNodes: Node[] = [];
-  if (!_.isEmpty(data.nodes)) {
-    const updatedNodesPromises: Promise<Node>[] = [];
-    data.nodes?.forEach((node) => {
-      updatedNodesPromises.push(
-        prisma.node.upsert({
+    const isNodesProvided = !_.isEmpty(data.nodes);
+    const isEdgesProvided = !_.isEmpty(data.edges);
+
+    const incomingNodeIds = new Set((data.nodes ?? []).map((n) => n.id));
+    const incomingEdgeIds = new Set((data.edges ?? []).map((e) => e.id));
+
+    const [existingNodes, existingEdges] = await Promise.all([
+      tx.node.findMany({
+        where: { workflowId: data.id },
+        select: { id: true },
+      }),
+      tx.edge.findMany({
+        where: { workflowId: data.id },
+        select: { id: true, sourceNodeId: true, targetNodeId: true },
+      }),
+    ]);
+
+    const nodesToDelete = isNodesProvided
+      ? existingNodes.map((n) => n.id).filter((id) => !incomingNodeIds.has(id))
+      : [];
+
+    const edgesToDelete = isEdgesProvided
+      ? existingEdges.map((e) => e.id).filter((id) => !incomingEdgeIds.has(id))
+      : [];
+
+    if (edgesToDelete.length > 0) {
+      await tx.edge.deleteMany({
+        where: { workflowId: data.id, id: { in: edgesToDelete } },
+      });
+    }
+
+    if (nodesToDelete.length > 0) {
+      await tx.node.deleteMany({
+        where: { workflowId: data.id, id: { in: nodesToDelete } },
+      });
+    }
+
+    let updatedNodes: Node[] = [];
+    if (isNodesProvided) {
+      const upserts = (data.nodes ?? []).map((node) =>
+        tx.node.upsert({
           where: { id: node.id },
           update: {
             nodeType: node.nodeType,
@@ -110,16 +146,13 @@ router.put("/update/:id", async (req, res) => {
           },
         }),
       );
-    });
-    updatedNodes = await Promise.all(updatedNodesPromises);
-  }
+      updatedNodes = await Promise.all(upserts);
+    }
 
-  let updatedEdges: Edge[] = [];
-  if (!_.isEmpty(data.edges)) {
-    const updatedEdgesPromises: Promise<Edge>[] = [];
-    data.edges?.forEach((edge) => {
-      updatedEdgesPromises.push(
-        prisma.edge.upsert({
+    let updatedEdges: Edge[] = [];
+    if (isEdgesProvided) {
+      const upserts = (data.edges ?? []).map((edge) =>
+        tx.edge.upsert({
           where: { id: edge.id },
           update: {
             sourceNodeId: edge.sourceNodeId,
@@ -128,15 +161,20 @@ router.put("/update/:id", async (req, res) => {
           create: {
             id: edge.id,
             workflowId: data.id,
-            edgeType: edge.edgeType,
+            edgeType: EdgeType.STEP,
             sourceNodeId: edge.sourceNodeId,
             targetNodeId: edge.targetNodeId,
           },
         }),
       );
-    });
-    updatedEdges = await Promise.all(updatedEdgesPromises);
-  }
-  // console.log({ updatedEdges, updatedNodes, updatedWorkflow });
-  return res.json({ success: true, data: { workflow: updatedWorkflow } });
+      updatedEdges = await Promise.all(upserts);
+    }
+
+    return { updatedWorkflow, updatedNodes, updatedEdges };
+  });
+
+  return res.json({
+    success: true,
+    data: { workflow: result.updatedWorkflow },
+  });
 });

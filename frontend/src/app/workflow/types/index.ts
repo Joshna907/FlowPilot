@@ -1,3 +1,5 @@
+import { NodeType } from "@/stores/useWorkflowStore";
+
 export type ApiWorkflow = {
   id: string;
   name: string;
@@ -10,11 +12,7 @@ export type ApiWorkflow = {
 
 export type ApiNode = {
   id: string;
-  nodeTypeId: string;
-  nodeType: {
-    id: string;
-    name: string;
-  };
+  nodeType: NodeType;
   positionX: number;
   positionY: number;
   metadata: Record<string, unknown>;
@@ -22,10 +20,15 @@ export type ApiNode = {
   updatedAt: string;
 };
 
+export type ApiNodeInput = Omit<ApiNode, "createdAt" | "updatedAt">;
+
 export type ApiEdge = {
   id: string;
   sourceNodeId: string;
   targetNodeId: string;
+  edgeType: string;
   createdAt: string;
   updatedAt: string;
 };
+
+export type ApiEdgeInput = Omit<ApiEdge, "createdAt" | "updatedAt">;

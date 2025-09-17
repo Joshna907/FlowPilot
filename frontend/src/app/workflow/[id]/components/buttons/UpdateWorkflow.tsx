@@ -1,17 +1,18 @@
+import { ApiEdgeInput, ApiNodeInput } from "@/app/workflow/types";
 import { Button } from "@/components/ui/button";
+import { api, convertStateToApiEdge, convertStateToApiNode } from "@/lib/utils";
 import { useWorkflow } from "@/stores";
 import { useMutation } from "@tanstack/react-query";
-// import { v4 as uuidv4 } from "uuid";
+import { toast } from "sonner";
 
 export function UpdateWorkflowButton() {
   const nodes = useWorkflow((state) => state.nodes);
   const edges = useWorkflow((state) => state.edges);
-  const setNodes = useWorkflow((state) => state.setNodes);
-  const setEdges = useWorkflow((state) => state.setEdges);
+  const workflow = useWorkflow((state) => state.workflow);
 
   const updateWorkflow = useMutation({
-    mutationFn: (input: { nodes: NodeInput[]; edges: EdgeInput[] }) => {
-      return axios.post("/api/workflow/update", input);
+    mutationFn: (input: { nodes: ApiNodeInput[]; edges: ApiEdgeInput[] }) => {
+      return api.put(`/workflow/update/${workflow.id}`, input);
     },
     onSuccess: ({ data }) => {
       if (!data.success) {
@@ -23,30 +24,10 @@ export function UpdateWorkflowButton() {
 
   function handleSave() {
     // check if any changes have happened
-    const nodesInput: NodeInput[] = [
-      {
-        id: "n1",
-        positionX: 0,
-        positionY: 100,
-        nodeTypeId: "6575386d-95a3-4f4a-866c-01e5763aeb38",
-        metadata: JSON.stringify({ label: "Node 1" }),
-      },
-      {
-        id: "nE",
-        positionX: 0,
-        positionY: 100,
-        nodeTypeId: "6575386d-95a3-4f4a-866c-01e5763aeb38",
-        metadata: JSON.stringify({}),
-      },
-    ];
-    const edgeInput: EdgeInput[] = [
-      {
-        id: "n1-nE",
-        sourceNodeId: "n1",
-        targetNodeId: "nE",
-      },
-    ];
-    createWorkflow.mutate({ nodes: nodesInput, edges: edgeInput });
+    const nodesApiInput = nodes.map(convertStateToApiNode);
+    const edgesApiInput = edges.map(convertStateToApiEdge);
+
+    updateWorkflow.mutate({ nodes: nodesApiInput, edges: edgesApiInput });
   }
-  return <Button>Save</Button>;
+  return <Button onClick={handleSave}>Save</Button>;
 }

@@ -1,8 +1,14 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import axios from "axios";
-import { ApiEdge, ApiNode } from "@/app/workflow/types";
+import {
+  ApiEdge,
+  ApiEdgeInput,
+  ApiNode,
+  ApiNodeInput,
+} from "@/app/workflow/types";
 import { Node, Edge } from "@xyflow/react";
+import { NodeType } from "@/stores/useWorkflowStore";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -16,7 +22,7 @@ export function convertApiNodeToState(node: ApiNode): Node {
   return {
     id: node.id,
     position: { x: node.positionX, y: node.positionY },
-    type: node.nodeType.name,
+    type: node.nodeType,
     data: node.metadata,
   };
 }
@@ -30,18 +36,21 @@ export function convertApiEdgeToState(edge: ApiEdge): Edge {
   };
 }
 
-export function convertStateToApiNode(node: Node): ApiNode {
+export function convertStateToApiNode(node: Node): ApiNodeInput {
   return {
     id: node.id,
-    nodeTypeId: string,
-    nodeType: {
-      id: string,
-      name: string,
-    },
-    positionX: number,
-    positionY: number,
-    metadata: Record<string, unknown>,
+    nodeType: node.type as NodeType,
+    positionX: node.position.x,
+    positionY: node.position.y,
+    metadata: node.data,
   };
 }
 
-export function convertStateToApiEdge(node: Node): ApiNode {}
+export function convertStateToApiEdge(edge: Edge): ApiEdgeInput {
+  return {
+    id: edge.id,
+    sourceNodeId: edge.source,
+    targetNodeId: edge.target,
+    edgeType: edge.type ?? "step",
+  };
+}

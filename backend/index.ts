@@ -2,9 +2,12 @@ import express from "express";
 import { authRouter, workflowRouter } from "./routes";
 import { authMiddleware } from "./middlewares/auth";
 import { errorHandler } from "./middlewares/error";
+import cors from "cors";
 
 const app = express();
+
 app.use(express.json());
+app.use(cors());
 
 app.use("/", authRouter);
 // routers above won't run auth middleware
