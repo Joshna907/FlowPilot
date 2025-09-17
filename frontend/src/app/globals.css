@@ -120,3 +120,39 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .workflow-card {
+    @apply relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm transition-all duration-200;
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .workflow-card:hover {
+    @apply scale-105;
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .workflow-status-active {
+    @apply inline-flex items-center rounded-full px-2 py-1 text-xs font-medium;
+    background: hsl(var(--workflow-success) / 0.1);
+    color: hsl(var(--workflow-success));
+  }
+
+  .workflow-status-archived {
+    @apply inline-flex items-center rounded-full px-2 py-1 text-xs font-medium;
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+  }
+
+  .workflow-action-btn {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent transition-colors hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}

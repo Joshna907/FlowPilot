@@ -3,6 +3,8 @@ import {
   ManualTriggerNode,
   InitialNode,
   AddNode,
+  WebhookNode,
+  EmailNode,
 } from "@/app/workflow/[id]/components/nodes/custom";
 import { toast } from "sonner";
 import { Edge, Node } from "@xyflow/react";
@@ -15,6 +17,8 @@ export enum NodeType {
   EMPTY = "EMPTY",
   MANUAL = "MANUAL",
   ADD = "ADD",
+  WEBHOOK = "WEBHOOK",
+  EMAIL = "EMAIL",
 }
 
 export const WORKFLOW_GAP_X = 200;
@@ -24,6 +28,8 @@ export const nodeTypes = {
   [NodeType.EMPTY]: EmptyNode,
   [NodeType.MANUAL]: ManualTriggerNode,
   [NodeType.ADD]: AddNode,
+  [NodeType.WEBHOOK]: WebhookNode,
+  [NodeType.EMAIL]: EmailNode,
 } as const;
 
 type WorkflowState = {

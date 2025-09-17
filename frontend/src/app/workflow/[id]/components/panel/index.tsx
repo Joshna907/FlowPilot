@@ -8,9 +8,62 @@ import {
 import { useConfigPanel } from "@/stores";
 import { NodeType, useWorkflow } from "@/stores/useWorkflowStore";
 import { ArrowRight } from "lucide-react";
+
+function getNodeOptions(nodeType: NodeType) {
+  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL) {
+    return [
+      {
+        nodeType: NodeType.MANUAL,
+        title: "Manual",
+        description: "Run Manually upon clicking the Trigger.",
+      },
+      {
+        nodeType: NodeType.WEBHOOK,
+        title: "Webhook",
+        description: "Run when a webhook is hit.",
+      },
+    ];
+  }
+  return [
+    {
+      nodeType: NodeType.EMAIL,
+      title: "Email",
+      description: "Email",
+    },
+  ];
+}
+
+function getPanelTitle(nodeType: NodeType) {
+  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL) {
+    return "What triggers this workflow?";
+  }
+  return "What does this Node Do ?";
+}
+
+function getPanelDescription(nodeType: NodeType) {
+  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL) {
+    return "A trigger is a step that starts your workflow";
+  }
+  return "Choose what step you want this node to perform.";
+}
+
 export function NodesPanel() {
   const isConfigPanelOpen = useConfigPanel((state) => state.isConfigPanelOpen);
   const closeConfigPanel = useConfigPanel((state) => state.closeConfigPanel);
+
+  const selectedNodeId = useWorkflow((state) => state.selectedNodeId);
+  const nodes = useWorkflow((state) => state.nodes);
+  const selectedNode = nodes.find((node) => selectedNodeId === node.id);
+
+  if (!selectedNode) {
+    return;
+  }
+  const selectedNodeType = selectedNode?.type as NodeType;
+
+  if (!selectedNodeType)
+    return <div>could not determine selected node type</div>;
+
+  const nodeOptions = getNodeOptions(selectedNodeType);
 
   return (
     <Sheet
@@ -23,16 +76,21 @@ export function NodesPanel() {
     >
       <SheetContent className="p-4">
         <SheetHeader>
-          <SheetTitle>What triggers this workflow?</SheetTitle>
+          <SheetTitle>{getPanelTitle(selectedNodeType)}</SheetTitle>
           <SheetDescription>
-            A trigger is a step that starts your workflow
+            {getPanelDescription(selectedNodeType)}
           </SheetDescription>
         </SheetHeader>
-        <PanelItem
-          nodeType={NodeType.MANUAL}
-          title="Manual"
-          description="Run Manually"
-        />
+        {nodeOptions.map((option, index) => {
+          return (
+            <PanelItem
+              key={index}
+              nodeType={option.nodeType}
+              title={option.title}
+              description={option.description}
+            />
+          );
+        })}
       </SheetContent>
     </Sheet>
   );

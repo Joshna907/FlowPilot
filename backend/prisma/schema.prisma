@@ -4,12 +4,112 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+enum NodeType {
+  INITIAL
+  EMPTY
+  SEND_EMAIL
+  WEBHOOK_TRIGGER
+  MANUAL_TRIGGER
+}
+
+enum EdgeType {
+  STEP
+}
+
 model User {
-  id    Int    @id @default(autoincrement())
-  name  String
-  email String @unique
+  id          String       @id @default(uuid())
+  username    String       @unique
+  name        String?
+  password    String
+  workflows   Workflow[]
+  credentials Credential[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model CredentialType {
+  id             String       @id @default(uuid())
+  credentialType String
+  Credential     Credential[]
+}
+
+model Credential {
+  id               String         @id @default(uuid())
+  User             User?          @relation(fields: [userId], references: [id])
+  userId           String?
+  credentialType   CredentialType @relation(fields: [credentialTypeId], references: [id])
+  credentialTypeId String
+  metadata         String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([userId])
+}
+
+model Workflow {
+  id         String      @id @default(uuid())
+  name       String
+  nodes      Node[]
+  edges      Edge[]
+  userId     String?
+  User       User?       @relation(fields: [userId], references: [id])
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  archivedAt DateTime?
+  execution  Execution[]
+
+  @@index([updatedAt])
+}
+
+model Edge {
+  id           String    @id
+  workflow     Workflow? @relation(fields: [workflowId], references: [id])
+  workflowId   String?
+  sourceNode   Node      @relation("edgeSource", fields: [sourceNodeId], references: [id])
+  sourceNodeId String
+  targetNode   Node      @relation("edgeTarget", fields: [targetNodeId], references: [id])
+  targetNodeId String
+  edgeType     EdgeType
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([workflowId, id])
+  @@index([workflowId])
+  @@index([sourceNodeId])
+  @@index([targetNodeId])
+}
+
+model Node {
+  id            String    @id
+  workflow      Workflow? @relation(fields: [workflowId], references: [id])
+  workflowId    String?
+  nodeType      NodeType
+  positionX     Int
+  positionY     Int
+  metadata      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  outgoingEdges Edge[]    @relation("edgeSource")
+  incomingEdges Edge[]    @relation("edgeTarget")
+
+  @@unique([workflowId, id])
+  @@index([workflowId])
+}
+
+model Execution {
+  id         String   @id @default(uuid())
+  workflow   Workflow @relation(fields: [workflowId], references: [id])
+  status     String
+  output     String?
+  startedAt  DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  workflowId String
+
+  @@index([status])
+  @@index([workflowId])
 }
