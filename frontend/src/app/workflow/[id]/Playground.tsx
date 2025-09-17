@@ -24,14 +24,13 @@ import { UpdateWorkflowButton } from "./components/buttons/UpdateWorkflow";
 import { ApiWorkflow } from "../types";
 
 export default function Playground({ workflow }: { workflow: ApiWorkflow }) {
-  console.log({ workflow });
   const nodes = useWorkflow((state) => state.nodes);
   const edges = useWorkflow((state) => state.edges);
   const setNodes = useWorkflow((state) => state.setNodes);
   const setEdges = useWorkflow((state) => state.setEdges);
   const setWorkflow = useWorkflow((state) => state.setWorkflow);
 
-  console.log({ nodes, edges });
+  console.log({ nodes, edges,workflow });
 
   useEffect(() => {
     const apiNodes = workflow.nodes;

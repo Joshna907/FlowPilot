@@ -40,9 +40,9 @@ model CredentialType {
 
 model Credential {
   id               String         @id @default(uuid())
-  User             User?          @relation(fields: [userId], references: [id])
+  User             User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId           String?
-  credentialType   CredentialType @relation(fields: [credentialTypeId], references: [id])
+  credentialType   CredentialType @relation(fields: [credentialTypeId], references: [id], onDelete: Restrict)
   credentialTypeId String
   metadata         String
   createdAt        DateTime       @default(now())
@@ -57,7 +57,7 @@ model Workflow {
   nodes      Node[]
   edges      Edge[]
   userId     String?
-  User       User?       @relation(fields: [userId], references: [id])
+  User       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   archivedAt DateTime?
@@ -68,11 +68,11 @@ model Workflow {
 
 model Edge {
   id           String    @id
-  workflow     Workflow? @relation(fields: [workflowId], references: [id])
+  workflow     Workflow? @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   workflowId   String?
-  sourceNode   Node      @relation("edgeSource", fields: [sourceNodeId], references: [id])
+  sourceNode   Node      @relation("edgeSource", fields: [sourceNodeId], references: [id], onDelete: Cascade)
   sourceNodeId String
-  targetNode   Node      @relation("edgeTarget", fields: [targetNodeId], references: [id])
+  targetNode   Node      @relation("edgeTarget", fields: [targetNodeId], references: [id], onDelete: Cascade)
   targetNodeId String
   edgeType     EdgeType
   createdAt    DateTime  @default(now())
@@ -86,7 +86,7 @@ model Edge {
 
 model Node {
   id            String    @id
-  workflow      Workflow? @relation(fields: [workflowId], references: [id])
+  workflow      Workflow? @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   workflowId    String?
   nodeType      NodeType
   positionX     Int
@@ -103,7 +103,7 @@ model Node {
 
 model Execution {
   id         String   @id @default(uuid())
-  workflow   Workflow @relation(fields: [workflowId], references: [id])
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   status     String
   output     String?
   startedAt  DateTime @default(now())
