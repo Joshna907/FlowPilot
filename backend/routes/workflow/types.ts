@@ -6,7 +6,7 @@ export const nodeSchema = z.object({
   nodeType: z.enum(Object.values(NodeType)),
   positionX: z.number(),
   positionY: z.number(),
-  metadata: z.object(),
+  metadata: z.record(z.string(), z.unknown()),
 });
 
 export const edgeSchema = z.object({

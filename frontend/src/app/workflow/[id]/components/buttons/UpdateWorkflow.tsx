@@ -27,6 +27,8 @@ export function UpdateWorkflowButton() {
     const nodesApiInput = nodes.map(convertStateToApiNode);
     const edgesApiInput = edges.map(convertStateToApiEdge);
 
+    console.log({ nodesApiInput, edgesApiInput });
+
     updateWorkflow.mutate({ nodes: nodesApiInput, edges: edgesApiInput });
   }
   return <Button onClick={handleSave}>Save</Button>;

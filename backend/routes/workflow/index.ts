@@ -5,7 +5,7 @@ import { edgeSchema, nodeSchema } from "./types";
 import { prisma } from "../../utils/db";
 import { ErrorMessage } from "../../utils/errorMessage";
 import _ from "lodash";
-import { EdgeType, type Edge, type Node } from "../../generated/prisma";
+import { EdgeType, Prisma, type Edge, type Node } from "../../generated/prisma";
 
 export const router = express.Router();
 
@@ -127,14 +127,14 @@ router.put("/update/:id", async (req, res) => {
 
     let updatedNodes: Node[] = [];
     if (isNodesProvided) {
-      const upserts = (data.nodes ?? []).map((node) =>
-        tx.node.upsert({
+      const upserts = (data.nodes ?? []).map((node) => {
+        return tx.node.upsert({
           where: { id: node.id },
           update: {
             nodeType: node.nodeType,
             positionX: node.positionX,
             positionY: node.positionY,
-            metadata: node.metadata,
+            metadata: node.metadata as unknown as Prisma.InputJsonValue,
           },
           create: {
             id: node.id,
@@ -142,10 +142,10 @@ router.put("/update/:id", async (req, res) => {
             nodeType: node.nodeType,
             positionX: node.positionX,
             positionY: node.positionY,
-            metadata: node.metadata,
+            metadata: node.metadata as unknown as Prisma.InputJsonValue,
           },
-        }),
-      );
+        });
+      });
       updatedNodes = await Promise.all(upserts);
     }
 
