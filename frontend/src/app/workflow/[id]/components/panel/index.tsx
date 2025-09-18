@@ -9,8 +9,21 @@ import { useConfigPanel } from "@/stores";
 import { NodeType, useWorkflow } from "@/stores/useWorkflowStore";
 import { ArrowRight } from "lucide-react";
 
+enum NodeCategory {
+  TRIGGER = "TRIGGER",
+  CHORE = "CHORE",
+}
+
+const nodeCategories = new Map<NodeCategory, NodeType[]>([
+  [
+    NodeCategory.TRIGGER,
+    [NodeType.WEBHOOK_TRIGGER, NodeType.MANUAL_TRIGGER, NodeType.INITIAL],
+  ],
+  [NodeCategory.CHORE, [NodeType.SEND_EMAIL, NodeType.EMPTY]],
+]);
+
 function getNodeOptions(nodeType: NodeType) {
-  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL_TRIGGER) {
+  if (nodeCategories.get(NodeCategory.TRIGGER)?.includes(nodeType)) {
     return [
       {
         nodeType: NodeType.MANUAL_TRIGGER,
@@ -23,14 +36,17 @@ function getNodeOptions(nodeType: NodeType) {
         description: "Run when a webhook is hit.",
       },
     ];
+  } else if (nodeCategories.get(NodeCategory.CHORE)?.includes(nodeType)) {
+    return [
+      {
+        nodeType: NodeType.SEND_EMAIL,
+        title: "Email",
+        description: "Email",
+      },
+    ];
+  } else {
+    return [];
   }
-  return [
-    {
-      nodeType: NodeType.SEND_EMAIL,
-      title: "Email",
-      description: "Email",
-    },
-  ];
 }
 
 function getPanelTitle(nodeType: NodeType) {

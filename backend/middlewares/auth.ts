@@ -15,7 +15,7 @@ export function authMiddleware(
   next: NextFunction,
 ) {
   req.user = {
-    id: "b242aecc-0e6c-46d7-ae3b-6da1708fa6e1",
+    id: "a190d173-2d10-49a6-8f9d-3441fc4966c2",
     role: "",
   };
   next();

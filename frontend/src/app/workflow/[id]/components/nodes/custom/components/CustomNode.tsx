@@ -6,15 +6,18 @@ export function CustomNode({
   children,
   nodeId,
   className,
+  preventDefault = false,
 }: {
   children: React.ReactNode;
   nodeId: string;
   className?: string;
+  preventDefault?: boolean;
 }) {
   const setSelectedNodeId = useWorkflow((state) => state.setSelectedNodeId);
   const openConfigPanel = useConfigPanel((state) => state.openConfigPanel);
 
   function handleSelectNodeId() {
+    if (preventDefault) return;
     setSelectedNodeId(nodeId);
   }
 
@@ -29,7 +32,10 @@ export function CustomNode({
       <div
         className="flex justify-center items-center"
         onClick={handleSelectNodeId}
-        onDoubleClick={openConfigPanel}
+        onDoubleClick={() => {
+          if (preventDefault) return;
+          openConfigPanel();
+        }}
       >
         {children}
       </div>

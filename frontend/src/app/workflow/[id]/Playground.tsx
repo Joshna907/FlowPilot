@@ -30,7 +30,7 @@ export default function Playground({ workflow }: { workflow: ApiWorkflow }) {
   const setEdges = useWorkflow((state) => state.setEdges);
   const setWorkflow = useWorkflow((state) => state.setWorkflow);
 
-  console.log({ nodes, edges,workflow });
+  console.log({ nodes, edges, workflow });
 
   useEffect(() => {
     const apiNodes = workflow.nodes;

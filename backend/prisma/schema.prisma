@@ -101,15 +101,22 @@ model Node {
   @@index([workflowId])
 }
 
+enum ExecutionStatus {
+  QUEUED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+}
+
 model Execution {
-  id         String   @id @default(uuid())
-  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  status     String
-  output     String?
-  startedAt  DateTime @default(now())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id         String          @id @default(uuid())
+  status     ExecutionStatus
+  output     Json?
+  workflow   Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   workflowId String
+  startedAt  DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
   @@index([status])
   @@index([workflowId])
