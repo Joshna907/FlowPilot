@@ -156,3 +156,9 @@
     background-clip: text;
   }
 }
+
+@layer components {
+  .panel-form {
+    @apply space-y-8 p-4;
+  }
+}

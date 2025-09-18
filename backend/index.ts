@@ -1,5 +1,5 @@
 import express from "express";
-import { authRouter, executionRouter, workflowRouter } from "./routes";
+import { authRouter, credentialRouter, executionRouter, workflowRouter } from "./routes";
 import { authMiddleware } from "./middlewares/auth";
 import { errorHandler } from "./middlewares/error";
 import cors from "cors";
@@ -15,6 +15,7 @@ app.use(authMiddleware);
 
 app.use("/workflow", workflowRouter);
 app.use("/execution", executionRouter);
+app.use("/credential", credentialRouter);
 
 app.use(errorHandler);
 const PORT = process.env.PORT || 3001;

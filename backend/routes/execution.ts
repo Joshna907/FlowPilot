@@ -36,7 +36,7 @@ router.post("/execute/:id", async (req, res) => {
   }
 
   const redisManager = RedisManager.getInstance();
-  const qLength = redisManager.pushExection(execution.id);
+  const qLength = await redisManager.pushExection(execution.id);
 
   if (qLength <= 0) {
     console.error("error queuing execution");

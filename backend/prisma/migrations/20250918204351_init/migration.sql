@@ -1,8 +1,14 @@
 -- CreateEnum
-CREATE TYPE "public"."NodeType" AS ENUM ('INITIAL', 'EMPTY', 'SEND_EMAIL', 'WEBHOOK_TRIGGER', 'MANUAL_TRIGGER');
+CREATE TYPE "public"."NodeType" AS ENUM ('ADD_NODE', 'INITIAL', 'EMPTY', 'SEND_EMAIL', 'WEBHOOK_TRIGGER', 'MANUAL_TRIGGER');
 
 -- CreateEnum
 CREATE TYPE "public"."EdgeType" AS ENUM ('STEP');
+
+-- CreateEnum
+CREATE TYPE "public"."CredentialType" AS ENUM ('GMAIL');
+
+-- CreateEnum
+CREATE TYPE "public"."ExecutionStatus" AS ENUM ('QUEUED', 'PROCESSING', 'SUCCEEDED', 'FAILED');
 
 -- CreateTable
 CREATE TABLE "public"."User" (
@@ -17,18 +23,10 @@ CREATE TABLE "public"."User" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."CredentialType" (
-    "id" TEXT NOT NULL,
-    "credentialType" TEXT NOT NULL,
-
-    CONSTRAINT "CredentialType_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "public"."Credential" (
     "id" TEXT NOT NULL,
     "userId" TEXT,
-    "credentialTypeId" TEXT NOT NULL,
+    "credentialType" "public"."CredentialType" NOT NULL,
     "metadata" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -66,10 +64,9 @@ CREATE TABLE "public"."Node" (
     "id" TEXT NOT NULL,
     "workflowId" TEXT,
     "nodeType" "public"."NodeType" NOT NULL,
-    "nodeTypeId" TEXT NOT NULL,
     "positionX" INTEGER NOT NULL,
     "positionY" INTEGER NOT NULL,
-    "metadata" TEXT,
+    "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -79,12 +76,12 @@ CREATE TABLE "public"."Node" (
 -- CreateTable
 CREATE TABLE "public"."Execution" (
     "id" TEXT NOT NULL,
-    "status" TEXT NOT NULL,
-    "output" TEXT,
-    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "status" "public"."ExecutionStatus" NOT NULL,
+    "output" JSONB,
+    "workflowId" TEXT NOT NULL,
+    "startedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "workflowId" TEXT NOT NULL,
 
     CONSTRAINT "Execution_pkey" PRIMARY KEY ("id")
 );
@@ -123,25 +120,22 @@ CREATE INDEX "Execution_status_idx" ON "public"."Execution"("status");
 CREATE INDEX "Execution_workflowId_idx" ON "public"."Execution"("workflowId");
 
 -- AddForeignKey
-ALTER TABLE "public"."Credential" ADD CONSTRAINT "Credential_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."Credential" ADD CONSTRAINT "Credential_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Credential" ADD CONSTRAINT "Credential_credentialTypeId_fkey" FOREIGN KEY ("credentialTypeId") REFERENCES "public"."CredentialType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Workflow" ADD CONSTRAINT "Workflow_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Workflow" ADD CONSTRAINT "Workflow_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."Edge" ADD CONSTRAINT "Edge_workflowId_fkey" FOREIGN KEY ("workflowId") REFERENCES "public"."Workflow"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Edge" ADD CONSTRAINT "Edge_workflowId_fkey" FOREIGN KEY ("workflowId") REFERENCES "public"."Workflow"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."Edge" ADD CONSTRAINT "Edge_sourceNodeId_fkey" FOREIGN KEY ("sourceNodeId") REFERENCES "public"."Node"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Edge" ADD CONSTRAINT "Edge_sourceNodeId_fkey" FOREIGN KEY ("sourceNodeId") REFERENCES "public"."Node"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Edge" ADD CONSTRAINT "Edge_targetNodeId_fkey" FOREIGN KEY ("targetNodeId") REFERENCES "public"."Node"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Edge" ADD CONSTRAINT "Edge_targetNodeId_fkey" FOREIGN KEY ("targetNodeId") REFERENCES "public"."Node"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Node" ADD CONSTRAINT "Node_workflowId_fkey" FOREIGN KEY ("workflowId") REFERENCES "public"."Workflow"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Node" ADD CONSTRAINT "Node_workflowId_fkey" FOREIGN KEY ("workflowId") REFERENCES "public"."Workflow"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."Execution" ADD CONSTRAINT "Execution_workflowId_fkey" FOREIGN KEY ("workflowId") REFERENCES "public"."Workflow"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Execution" ADD CONSTRAINT "Execution_workflowId_fkey" FOREIGN KEY ("workflowId") REFERENCES "public"."Workflow"("id") ON DELETE CASCADE ON UPDATE CASCADE;

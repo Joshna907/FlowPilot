@@ -8,64 +8,20 @@ import {
 import { useConfigPanel } from "@/stores";
 import { NodeType, useWorkflow } from "@/stores/useWorkflowStore";
 import { ArrowRight } from "lucide-react";
-
-enum NodeCategory {
-  TRIGGER = "TRIGGER",
-  CHORE = "CHORE",
-}
-
-const nodeCategories = new Map<NodeCategory, NodeType[]>([
-  [
-    NodeCategory.TRIGGER,
-    [NodeType.WEBHOOK_TRIGGER, NodeType.MANUAL_TRIGGER, NodeType.INITIAL],
-  ],
-  [NodeCategory.CHORE, [NodeType.SEND_EMAIL, NodeType.EMPTY]],
-]);
-
-function getNodeOptions(nodeType: NodeType) {
-  if (nodeCategories.get(NodeCategory.TRIGGER)?.includes(nodeType)) {
-    return [
-      {
-        nodeType: NodeType.MANUAL_TRIGGER,
-        title: "Manual",
-        description: "Run Manually upon clicking the Trigger.",
-      },
-      {
-        nodeType: NodeType.WEBHOOK_TRIGGER,
-        title: "Webhook",
-        description: "Run when a webhook is hit.",
-      },
-    ];
-  } else if (nodeCategories.get(NodeCategory.CHORE)?.includes(nodeType)) {
-    return [
-      {
-        nodeType: NodeType.SEND_EMAIL,
-        title: "Email",
-        description: "Email",
-      },
-    ];
-  } else {
-    return [];
-  }
-}
-
-function getPanelTitle(nodeType: NodeType) {
-  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL_TRIGGER) {
-    return "What triggers this workflow?";
-  }
-  return "What does this Node Do ?";
-}
-
-function getPanelDescription(nodeType: NodeType) {
-  if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL_TRIGGER) {
-    return "A trigger is a step that starts your workflow";
-  }
-  return "Choose what step you want this node to perform.";
-}
+import {
+  getNodeOptions,
+  getPanelDescription,
+  getPanelTitle,
+  NodeOption,
+} from "./config";
+import { nodesFormConfig } from "./components/forms";
 
 export function NodesPanel() {
   const isConfigPanelOpen = useConfigPanel((state) => state.isConfigPanelOpen);
   const closeConfigPanel = useConfigPanel((state) => state.closeConfigPanel);
+  const currentConfigPanelNodeForm = useConfigPanel(
+    (state) => state.currentConfigPanelNodeForm,
+  );
 
   const selectedNodeId = useWorkflow((state) => state.selectedNodeId);
   const nodes = useWorkflow((state) => state.nodes);
@@ -97,36 +53,39 @@ export function NodesPanel() {
             {getPanelDescription(selectedNodeType)}
           </SheetDescription>
         </SheetHeader>
-        {nodeOptions.map((option, index) => {
-          return (
-            <PanelItem
-              key={index}
-              nodeType={option.nodeType}
-              title={option.title}
-              description={option.description}
-            />
-          );
-        })}
+        {currentConfigPanelNodeForm
+          ? nodesFormConfig[currentConfigPanelNodeForm]
+          : nodeOptions.map((option, index) => {
+              return (
+                <PanelItem
+                  key={index}
+                  nodeType={option.nodeType}
+                  title={option.title}
+                  description={option.description}
+                  form={option.form}
+                />
+              );
+            })}
       </SheetContent>
     </Sheet>
   );
 }
 
-function PanelItem({
-  title,
-  description,
-  nodeType,
-}: {
-  title: string;
-  description: string;
-  nodeType: NodeType;
-}) {
+function PanelItem({ title, description, nodeType, form }: NodeOption) {
   const changeSelectedNodeType = useWorkflow(
     (state) => state.changeSelectedNodeType,
   );
   const closeConfigPanel = useConfigPanel((state) => state.closeConfigPanel);
+  const setCurrentConfigPanelNodeForm = useConfigPanel(
+    (state) => state.setCurrentConfigPanelNodeForm,
+  );
 
   function handleChangeSelectedNodeType() {
+    console.log({ form });
+    // if form provided , need to finish that before changing the node type
+    if (form) {
+      return setCurrentConfigPanelNodeForm(nodeType);
+    }
     changeSelectedNodeType(nodeType);
     closeConfigPanel();
   }

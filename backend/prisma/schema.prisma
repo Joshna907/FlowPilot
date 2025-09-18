@@ -32,21 +32,18 @@ model User {
   updatedAt   DateTime     @updatedAt
 }
 
-model CredentialType {
-  id             String       @id @default(uuid())
-  credentialType String
-  Credential     Credential[]
+enum CredentialType {
+  GMAIL
 }
 
 model Credential {
-  id               String         @id @default(uuid())
-  User             User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId           String?
-  credentialType   CredentialType @relation(fields: [credentialTypeId], references: [id], onDelete: Restrict)
-  credentialTypeId String
-  metadata         String
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  id             String         @id @default(uuid())
+  User           User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String?
+  credentialType CredentialType
+  metadata       String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@index([userId])
 }

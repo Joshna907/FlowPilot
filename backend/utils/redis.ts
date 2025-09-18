@@ -18,8 +18,8 @@ export class RedisManager {
     return this.instance;
   }
 
-  public async pushExection(exectionId: string) {
-    const qLength = this.client.lPush(Q_NAME, JSON.stringify({ exectionId }));
+  public async pushExection(executionId: string) {
+    const qLength = this.client.lPush(Q_NAME, JSON.stringify({ executionId }));
     return qLength;
   }
 }
