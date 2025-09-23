@@ -48,7 +48,7 @@ export async function sendEmailAndAwaitReply(
       maxTries: 360,
     },
   );
-  return reply?.body;
+  return { reply: reply?.body };
 }
 export async function pollForReplyOnThread(
   oauth2Client: any,

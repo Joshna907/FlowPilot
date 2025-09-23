@@ -13,6 +13,7 @@ import { SetterFunction } from "./types";
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import { WebhookTriggerNode } from "@/app/workflow/[id]/components/nodes/custom/WebhookTrigger";
+import { HttpRequestNode } from "@/app/workflow/[id]/components/nodes/custom/HttpRequest";
 
 export enum NodeType {
   ADD_NODE = "ADD_NODE",
@@ -22,6 +23,7 @@ export enum NodeType {
   WEBHOOK_TRIGGER = "WEBHOOK_TRIGGER",
   MANUAL_TRIGGER = "MANUAL_TRIGGER",
   SEND_EMAIL_AND_AWAIT_REPLY = "SEND_EMAIL_AND_AWAIT_REPLY",
+  HTTP_REQUEST = "HTTP_REQUEST",
 }
 
 export const WORKFLOW_GAP_X = 200;
@@ -34,6 +36,7 @@ export const nodeTypes = {
   [NodeType.WEBHOOK_TRIGGER]: WebhookTriggerNode,
   [NodeType.SEND_EMAIL]: EmailNode,
   [NodeType.SEND_EMAIL_AND_AWAIT_REPLY]: SendEmailAndAwaitReplyNode,
+  [NodeType.HTTP_REQUEST]: HttpRequestNode,
 } as const;
 
 const initialNodes: Node[] = [

@@ -1,6 +1,7 @@
 import { NodeType } from "@/stores/useWorkflowStore";
 import { SendEmailForm } from "./sendEmail/SendEmail";
 import { WebhookTriggerForm } from "./WebhookTrigger";
+import { HttpRequestForm } from "./httpRequest";
 
 export const nodesFormConfig: Record<NodeType, React.ReactNode> = {
   [NodeType.ADD_NODE]: undefined,
@@ -12,4 +13,5 @@ export const nodesFormConfig: Record<NodeType, React.ReactNode> = {
   [NodeType.SEND_EMAIL_AND_AWAIT_REPLY]: (
     <SendEmailForm nodeType={NodeType.SEND_EMAIL_AND_AWAIT_REPLY} />
   ),
+  [NodeType.HTTP_REQUEST]: <HttpRequestForm />,
 };

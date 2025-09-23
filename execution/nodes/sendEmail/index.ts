@@ -41,7 +41,5 @@ export async function sendEmail(metadata: Record<string, unknown>) {
     subject,
     body,
   });
-  console.log({ response });
-
-  return;
+  return { threadId: response.threadId };
 }

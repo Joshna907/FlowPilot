@@ -16,6 +16,7 @@ export const nodeCategories: Record<NodeCategory, NodeType[]> = {
     NodeType.SEND_EMAIL,
     NodeType.EMPTY,
     NodeType.SEND_EMAIL_AND_AWAIT_REPLY,
+    NodeType.HTTP_REQUEST,
   ],
 };
 
@@ -56,6 +57,12 @@ export function getNodeOptions(nodeType: NodeType): NodeOption[] {
         title: "Send email and await reply",
         description: "Send email and await reply",
         form: nodesFormConfig[NodeType.SEND_EMAIL_AND_AWAIT_REPLY],
+      },
+      {
+        nodeType: NodeType.HTTP_REQUEST,
+        title: "Send an http request",
+        description: "Send an http request",
+        form: nodesFormConfig[NodeType.HTTP_REQUEST],
       },
     ];
   } else {
