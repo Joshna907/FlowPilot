@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "public"."NodeType" ADD VALUE 'SEND_EMAIL_AND_AWAIT_REPLY';

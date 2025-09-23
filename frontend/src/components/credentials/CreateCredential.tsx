@@ -34,7 +34,7 @@ export function CreateCredentialDialog({
             Please add your credentials below.
           </DialogDescription>
         </DialogHeader>
-        {credentialsFormConfig[credentialType]}
+        {/* {credentialsFormConfig[credentialType]} */}
       </DialogContent>
     </Dialog>
   );

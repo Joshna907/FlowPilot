@@ -7,6 +7,6 @@ async function initGoogleOAuth() {
   return (window.location.href = data.url);
 }
 
-export function SendEmailAndAwaitReply() {
+export function GoogleIntegration() {
   return <Button onClick={initGoogleOAuth}>+</Button>;
 }

@@ -23,9 +23,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfigPanel, useWorkflow } from "@/stores";
 import { NodeType } from "@/stores/useWorkflowStore";
-import { useGetUserEmailCredentials } from "./hook";
-import { CreateCredentialDialog } from "@/components/credentials/CreateCredential";
-import { CredentialType } from "@/lib/types/credential";
+import { useGetUserGoogleAccounts } from "./hook";
+import { GoogleIntegration } from "@/components/integrations";
 
 const sendEmailFormSchema = z.object({
   from: z.string(),
@@ -36,7 +35,7 @@ const sendEmailFormSchema = z.object({
 
 type SendEmailFormSchema = z.infer<typeof sendEmailFormSchema>;
 
-export function SendEmailForm() {
+export function SendEmailForm({ nodeType }: { nodeType: NodeType }) {
   const selectedNodeMetadata = useWorkflow((state) => {
     return state.nodes.find((node) => {
       return node.id === state.selectedNodeId;
@@ -60,12 +59,13 @@ export function SendEmailForm() {
     defaultValues,
   });
 
-  const data = useGetUserEmailCredentials();
+  const data = useGetUserGoogleAccounts();
+  console.log({ data });
   const updateSelectedNode = useWorkflow((state) => state.updateSelectedNode);
   const closeConfigPanel = useConfigPanel((state) => state.closeConfigPanel);
 
   function onSubmit(values: SendEmailFormSchema) {
-    updateSelectedNode({ metadata: values, type: NodeType.SEND_EMAIL });
+    updateSelectedNode({ metadata: values, type: nodeType });
     closeConfigPanel();
   }
   return (
@@ -78,7 +78,7 @@ export function SendEmailForm() {
             <FormItem>
               <FormLabel className="flex justify-between items-end">
                 From
-                <CreateCredentialDialog credentialType={CredentialType.GMAIL} />
+                <GoogleIntegration />
               </FormLabel>
               <FormControl>
                 <Select
@@ -91,10 +91,10 @@ export function SendEmailForm() {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {data?.map((credential) => {
+                    {data?.map((account) => {
                       return (
-                        <SelectItem key={credential.id} value={credential.id}>
-                          {credential.id}
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.id}
                         </SelectItem>
                       );
                     })}

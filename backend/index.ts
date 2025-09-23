@@ -1,5 +1,6 @@
 import express from "express";
 import {
+    accountsRouter,
   authRouter,
   credentialRouter,
   executionRouter,
@@ -25,6 +26,7 @@ app.use("/workflow", workflowRouter);
 app.use("/execution", executionRouter);
 app.use("/credential", credentialRouter);
 app.use("/webhook", webhookRouter);
+app.use("/accounts", accountsRouter);
 
 app.use(errorHandler);
 const PORT = process.env.PORT || 3001;

@@ -1,5 +1,4 @@
 import { CredentialType } from "@/lib/types/credential";
-import { GmailCredentialsForm } from "./Gmail";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/utils";
 import { toast } from "sonner";
@@ -26,6 +25,6 @@ export function useCredentialsFormConfig() {
     createCredentials.mutate(input);
   }
   return {
-    [CredentialType.GMAIL]: <GmailCredentialsForm onSubmit={handleSubmit} />,
+    // [CredentialType.GMAIL]: <GmailCredentialsForm onSubmit={handleSubmit} />,
   };
 }

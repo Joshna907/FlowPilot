@@ -1,136 +1,97 @@
-import { oauth2Client } from "../lib";
-import { sendEmail, sendEmailMetadataSchema } from "./sendMail";
-import { google } from "googleapis";
+import { gmail_v1, google } from "googleapis";
+import { sendEmailMetadataSchema } from "./sendEmail";
+import {
+  extractText,
+  getAccountProfile,
+  sendGmail,
+  setCredentialsUsingAccount,
+  stripQuotedText,
+} from "./sendEmail/helpers";
 
-async function ensureFreshAccessToken() {
-  const res = await oauth2Client.getAccessToken();
-  if (!res || !res.token) throw new Error("Unable to obtain access token");
-  return res.token;
-}
-
-const gmail = google.gmail({ version: "v1", auth: oauth2Client });
-
-async function test() {
-  const x = {
-    access_token:
-      "",
-    refresh_token:
-      "",
-    scope: "https://www.googleapis.com/auth/gmail.modify",
-    token_type: "Bearer",
-  };
-  // Ensure token is fresh
-  oauth2Client.setCredentials(x);
-  await ensureFreshAccessToken();
-
-  // Simple profile call
-  const profile = await gmail.users.getProfile({ userId: "me" });
-  console.log("Email address:", profile.data.emailAddress);
-}
-
-await test();
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 
 export async function sendEmailAndAwaitReply(
   metadata: Record<string, unknown>,
 ) {
   const { success, data } = sendEmailMetadataSchema.safeParse(metadata);
   if (!success) {
-    throw "unable to parse sendEmailAndAwaitReply data";
+    throw "unable to parse email data";
+  }
+  const { from, to, subject, body } = data;
+
+  const oauth2Client = new google.auth.OAuth2(
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    `${process.env.BASE_URL}/auth/google/callback`,
+  );
+
+  await setCredentialsUsingAccount(from, oauth2Client);
+
+  const profile = await getAccountProfile(oauth2Client);
+  if (!profile.data.emailAddress) {
+    throw "no email found in profile";
   }
 
-  const { messageId } = await sendEmail(data);
-  if (!messageId) {
-    throw new Error("no message Id found");
-  }
-  const oauth2Client = "";
-
-  // const reply = await pollForReply(oauth2Client, messageId);
-  // if (reply) {
-  //   console.log("Reply found:", reply.body);
-  // } else {
-  //   console.log("No reply within timeout.");
-  // }
-}
-
-// decode helper
-function b64Decode(b64url: string) {
-  const b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
-  return Buffer.from(b64, "base64").toString("utf8");
-}
-
-function extractText(payload: any): string {
-  if (!payload) return "";
-  if (payload.mimeType === "text/plain" && payload.body?.data) {
-    return b64Decode(payload.body.data);
-  }
-  if (payload.parts) {
-    for (const p of payload.parts) {
-      const t = extractText(p);
-      if (t) return t;
-    }
-  }
-  return "";
-}
-
-export async function pollForReply(
-  auth: any,
-  gmailMessageId: string,
-  opts: { intervalMs?: number; maxTries?: number } = {},
-) {
-  const client = google.gmail({ version: "v1", auth });
-
-  const original = await client.users.messages.get({
-    userId: "me",
-    id: gmailMessageId,
-    format: "metadata",
+  const response = await sendGmail(oauth2Client, {
+    to,
+    from: profile.data.emailAddress,
+    subject,
+    body,
   });
 
-  const threadId = original.data.threadId;
-  if (!threadId) throw new Error("No threadId found");
+  const reply = await pollForReplyOnThread(
+    oauth2Client,
+    response.threadId ?? "",
+    {
+      intervalMs: 10000,
+      maxTries: 360,
+    },
+  );
+  return reply?.body;
+}
+export async function pollForReplyOnThread(
+  oauth2Client: any,
+  threadId: string,
+  opts: { intervalMs?: number; maxTries?: number } = {},
+): Promise<{
+  reply: gmail_v1.Schema$Message | undefined;
+  body: string;
+} | null> {
+  const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
-  let tries = 0;
   const intervalMs = opts.intervalMs ?? 5000;
-  const maxTries = opts.maxTries ?? 360;
+  const maxTries = opts.maxTries ?? 120;
+  let tries = 0;
 
   return new Promise((resolve, reject) => {
     const interval = setInterval(async () => {
       tries++;
       try {
-        // 2. List all messages in the same thread
-        const list = await client.users.messages.list({
+        // 1. Get all messages in this thread
+        const thread = await gmail.users.threads.get({
           userId: "me",
-          q: `in:inbox`,
-          // Gmail doesn’t support threadId filter in search,
-          // but threadId comes back in response
+          id: threadId,
+          format: "full",
         });
 
-        const msgs = list.data.messages || [];
+        const messages = thread.data.messages ?? [];
 
-        // 3. Filter for replies (same thread, but not original)
-        const replies: string[] = [];
-        for (const m of msgs) {
-          if (m.threadId === threadId && m.id !== gmailMessageId) {
-            replies.push(m.id!);
-          }
-        }
-
-        if (replies.length > 0) {
+        // 2. If more than 1 message in thread, treat later ones as replies
+        if (messages.length > 1) {
           clearInterval(interval);
 
-          // get the first reply
-          const reply = await client.users.messages.get({
-            userId: "me",
-            id: replies[0],
-            format: "full",
-          });
+          // Take the last message (latest reply)
+          const latest = messages[messages.length - 1];
+          const body =
+            extractText(latest?.payload) || latest?.snippet || "(no body)";
 
-          const body = extractText(reply.data.payload) || reply.data.snippet;
-          resolve({ reply: reply.data, body });
+          resolve({ reply: latest, body: stripQuotedText(body) });
         }
 
         if (tries >= maxTries) {
           clearInterval(interval);
-          resolve(null); // timeout
+          resolve(null);
         }
       } catch (err) {
         clearInterval(interval);

@@ -1,5 +1,5 @@
 import { NodeType } from "../../backend/generated/prisma";
-import { sendEmail } from "./sendMail";
+import { sendEmail } from "./sendEmail";
 import { sendEmailAndAwaitReply } from "./sendMailAndAwaitReply";
 
 function placeholder(metadata: Record<string, unknown>) {
