@@ -1,12 +1,23 @@
 import type { NextFunction, Response, Request } from "express";
+import jwt from "jsonwebtoken";
+import assert from "assert";
+
+export type JwtPayload = {
+  id: string;
+  role: string;
+};
 
 declare module "express-serve-static-core" {
   interface Request {
-    user?: {
-      id: string;
-      role: string;
-    };
+    user?: JwtPayload;
   }
+}
+
+const SECRET = process.env.JWT_SECRET;
+
+export function signJwtToken(input: { id: string; role: string }) {
+  assert(SECRET);
+  return jwt.sign(input, SECRET);
 }
 
 export function authMiddleware(

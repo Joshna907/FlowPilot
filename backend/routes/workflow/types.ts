@@ -15,3 +15,9 @@ export const edgeSchema = z.object({
   targetNodeId: z.string(),
   edgeType: z.string(),
 });
+
+export const nodeWebhookMetadatSchema = z.object({
+  endpointId: z.string(),
+});
+
+export type NodeWebhookMetadataSchema = z.infer<typeof nodeWebhookMetadatSchema>;

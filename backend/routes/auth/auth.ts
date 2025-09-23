@@ -1,8 +1,8 @@
 import express from "express";
-import { prisma } from "../utils/db";
+import { prisma } from "../../utils/db";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
-import { ErrorMessage } from "../utils/errorMessage";
+import { ErrorMessage } from "../../utils/errorMessage";
 
 const userSchema = z.object({
   username: z.string(),
@@ -74,3 +74,4 @@ router.get("/signin", async (req, res) => {
     data: { token },
   });
 });
+

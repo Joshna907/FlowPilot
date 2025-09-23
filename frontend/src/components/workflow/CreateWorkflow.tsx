@@ -15,19 +15,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import axios from "axios";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
+import { api } from "@/lib/utils";
 
 export function CreateWorkflowDialog() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const createWorkflow = useMutation({
     mutationFn: (input: { name: string }) => {
-      return axios.post("/api/workflow/create", input);
+      return api.post("/workflow/create", input);
     },
     onSuccess: ({ data }) => {
       if (!data.success) {
@@ -44,7 +43,7 @@ export function CreateWorkflowDialog() {
   }
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog>
       <form>
         <DialogTrigger asChild>
           <Button

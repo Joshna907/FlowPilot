@@ -1,11 +1,18 @@
 import express from "express";
 import assert from "assert";
 import z from "zod";
-import { edgeSchema, nodeSchema } from "./types";
+import { edgeSchema, nodeSchema, nodeWebhookMetadatSchema } from "./types";
 import { prisma } from "../../utils/db";
 import { ErrorMessage } from "../../utils/errorMessage";
 import _ from "lodash";
-import { EdgeType, Prisma, type Edge, type Node } from "../../generated/prisma";
+import {
+  EdgeType,
+  NodeType,
+  Prisma,
+  type Edge,
+  type Node,
+} from "../../generated/prisma";
+import { createWebhook, deleteWebhook } from "../webhook";
 
 export const router = express.Router();
 
@@ -97,11 +104,9 @@ router.put("/update/:id", async (req, res) => {
     const [existingNodes, existingEdges] = await Promise.all([
       tx.node.findMany({
         where: { workflowId: data.id },
-        select: { id: true },
       }),
       tx.edge.findMany({
         where: { workflowId: data.id },
-        select: { id: true, sourceNodeId: true, targetNodeId: true },
       }),
     ]);
 
@@ -169,6 +174,59 @@ router.put("/update/:id", async (req, res) => {
       );
       updatedEdges = await Promise.all(upserts);
     }
+
+    // add or remove webhooks
+
+    const providedWebhookNode = data.nodes?.find((n) => {
+      return n.nodeType === NodeType.WEBHOOK_TRIGGER;
+    });
+    const existingWebhookNode = existingNodes.find((node) => {
+      return node.nodeType === NodeType.WEBHOOK_TRIGGER;
+    });
+
+    const {
+      data: providedWebhookNodeParsedMetadata,
+      success: providedWebhookNodeParsedMetadataParsingSuccess,
+    } = nodeWebhookMetadatSchema.safeParse(providedWebhookNode?.metadata);
+
+    const {
+      data: existingWebhookNodeParsedMetadata,
+      success: existingWebhookNodeParsedMetadataParsingSuccess,
+    } = nodeWebhookMetadatSchema.safeParse(existingWebhookNode?.metadata);
+
+    if (
+      providedWebhookNode &&
+      providedWebhookNodeParsedMetadataParsingSuccess &&
+      !existingWebhookNode
+    ) {
+      // create a new webhook
+      await createWebhook({
+        db: tx,
+        webhookId: providedWebhookNodeParsedMetadata.endpointId,
+        workflowId: data.id,
+      });
+    }
+
+    if (
+      !providedWebhookNode &&
+      existingWebhookNode &&
+      existingWebhookNodeParsedMetadataParsingSuccess
+    ) {
+      // delete the existing webhook
+      await deleteWebhook({
+        db: tx,
+        webhookId: existingWebhookNodeParsedMetadata.endpointId,
+      });
+    }
+
+    // will be needed in future
+    // if (
+    //   providedWebhookNode &&
+    //   providedWebhookNodeParsedMetadataParsingSuccess &&
+    //   existingWebhookNode
+    // ) {
+    // update the existing webhook
+    // }
 
     return { updatedWorkflow, updatedNodes, updatedEdges };
   });

@@ -13,12 +13,32 @@ enum NodeType {
   INITIAL
   EMPTY
   SEND_EMAIL
+  SEND_EMAIL_AND_AWAIT_REPLY
   WEBHOOK_TRIGGER
   MANUAL_TRIGGER
 }
 
 enum EdgeType {
   STEP
+}
+
+enum ProviderType {
+  GOOGLE
+}
+
+model Account {
+  id                 String       @id @default(cuid())
+  userId             String
+  providerType       ProviderType
+  providerAccountId  String
+  refreshToken       String?
+  accessToken        String?
+  accessTokenExpires DateTime?
+  user               User         @relation(fields: [userId], references: [id])
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@unique([providerType, providerAccountId])
 }
 
 model User {
@@ -28,6 +48,7 @@ model User {
   password    String
   workflows   Workflow[]
   credentials Credential[]
+  accounts    Account[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
@@ -41,7 +62,7 @@ model Credential {
   User           User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         String?
   credentialType CredentialType
-  metadata       String
+  metadata       Json
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
@@ -49,16 +70,18 @@ model Credential {
 }
 
 model Workflow {
-  id         String      @id @default(uuid())
-  name       String
-  nodes      Node[]
-  edges      Edge[]
-  userId     String?
-  User       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id        String      @id @default(uuid())
+  name      String
+  nodes     Node[]
+  edges     Edge[]
+  userId    String?
+  User      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  execution Execution[]
+  webhook   Webhook?
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
   archivedAt DateTime?
-  execution  Execution[]
 
   @@index([updatedAt])
 }
@@ -117,4 +140,12 @@ model Execution {
 
   @@index([status])
   @@index([workflowId])
+}
+
+model Webhook {
+  id         String   @id
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflowId String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

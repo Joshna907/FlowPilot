@@ -1,5 +1,4 @@
 import { NodeType } from "@/stores/useWorkflowStore";
-import { SendEmailForm } from "./components/forms/sendEmail";
 import { nodesFormConfig } from "./components/forms";
 
 export enum NodeCategory {
@@ -13,7 +12,11 @@ export const nodeCategories: Record<NodeCategory, NodeType[]> = {
     NodeType.MANUAL_TRIGGER,
     NodeType.INITIAL,
   ],
-  [NodeCategory.STEP]: [NodeType.SEND_EMAIL, NodeType.EMPTY],
+  [NodeCategory.STEP]: [
+    NodeType.SEND_EMAIL,
+    NodeType.EMPTY,
+    NodeType.SEND_EMAIL_AND_AWAIT_REPLY,
+  ],
 };
 
 export type NodeOption = {
@@ -47,6 +50,12 @@ export function getNodeOptions(nodeType: NodeType): NodeOption[] {
         title: "Email",
         description: "Email",
         form: nodesFormConfig[NodeType.SEND_EMAIL],
+      },
+      {
+        nodeType: NodeType.SEND_EMAIL_AND_AWAIT_REPLY,
+        title: "Send email and await reply",
+        description: "Send email and await reply",
+        form: nodesFormConfig[NodeType.SEND_EMAIL_AND_AWAIT_REPLY],
       },
     ];
   } else {

@@ -3,8 +3,8 @@ import {
   ManualTriggerNode,
   InitialNode,
   AddNode,
-  WebhookNode,
   EmailNode,
+  SendEmailAndAwaitReplyNode,
 } from "@/app/workflow/[id]/components/nodes/custom";
 import { toast } from "sonner";
 import { Edge, Node } from "@xyflow/react";
@@ -12,6 +12,7 @@ import { create } from "zustand";
 import { SetterFunction } from "./types";
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
+import { WebhookTriggerNode } from "@/app/workflow/[id]/components/nodes/custom/WebhookTrigger";
 
 export enum NodeType {
   ADD_NODE = "ADD_NODE",
@@ -20,6 +21,7 @@ export enum NodeType {
   SEND_EMAIL = "SEND_EMAIL",
   WEBHOOK_TRIGGER = "WEBHOOK_TRIGGER",
   MANUAL_TRIGGER = "MANUAL_TRIGGER",
+  SEND_EMAIL_AND_AWAIT_REPLY = "SEND_EMAIL_AND_AWAIT_REPLY",
 }
 
 export const WORKFLOW_GAP_X = 200;
@@ -29,8 +31,9 @@ export const nodeTypes = {
   [NodeType.EMPTY]: EmptyNode,
   [NodeType.MANUAL_TRIGGER]: ManualTriggerNode,
   [NodeType.ADD_NODE]: AddNode,
-  [NodeType.WEBHOOK_TRIGGER]: WebhookNode,
+  [NodeType.WEBHOOK_TRIGGER]: WebhookTriggerNode,
   [NodeType.SEND_EMAIL]: EmailNode,
+  [NodeType.SEND_EMAIL_AND_AWAIT_REPLY]: SendEmailAndAwaitReplyNode,
 } as const;
 
 const initialNodes: Node[] = [
@@ -69,34 +72,49 @@ type WorkflowState = {
   setEdges: (edges: SetterFunction<Edge[]>) => void;
   selectedNodeId: string | undefined;
   setSelectedNodeId: (nodeId: string) => void;
-  changeSelectedNodeType: (type: NodeType) => void;
+  updateSelectedNode: (input: {
+    type?: NodeType;
+    metadata?: Record<string, unknown>;
+  }) => void;
   addNewEmptyNode: () => void;
 };
 
 export const useWorkflow = create<WorkflowState>((set) => ({
   nodes: initialNodes,
   edges: initialEdges,
+
   workflow: {
     id: "",
     name: "",
   },
+
   setWorkflow: (input: { name: string; id: string }) => {
     set({ workflow: input });
   },
+
   setNodes: (nodes) =>
     set((state) => ({
       nodes: typeof nodes === "function" ? nodes(state.nodes) : nodes,
     })),
+
   setEdges: (edges) =>
     set((state) => ({
       edges: typeof edges === "function" ? edges(state.edges) : edges,
     })),
+
   selectedNodeId: undefined,
   setSelectedNodeId: (nodeId: string) =>
     set({
       selectedNodeId: nodeId,
     }),
-  changeSelectedNodeType: (type: NodeType) => {
+
+  updateSelectedNode: ({
+    type,
+    metadata,
+  }: {
+    type?: NodeType;
+    metadata?: Record<string, unknown>;
+  }) => {
     set((s) => {
       const allNodes = s.nodes;
       const foundNodeIndex = allNodes.findIndex(
@@ -105,12 +123,17 @@ export const useWorkflow = create<WorkflowState>((set) => ({
       if (foundNodeIndex === -1) {
         toast.error("unable to find selected node Id");
       }
-      const updatedFoundNode = { ...allNodes[foundNodeIndex], type };
+      const updatedFoundNode = {
+        ...allNodes[foundNodeIndex],
+        ...(type && { type }),
+        ...(metadata && { data: metadata }),
+      };
       const allNodesClone = [...allNodes];
       allNodesClone[foundNodeIndex] = updatedFoundNode;
       return { nodes: allNodesClone };
     });
   },
+
   addNewEmptyNode: () => {
     set((s) => {
       const lastNodeId = s.nodes[s.nodes.length - 1].id;

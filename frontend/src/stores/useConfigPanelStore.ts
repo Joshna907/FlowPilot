@@ -5,7 +5,7 @@ type ConfigPanelState = {
   isConfigPanelOpen: boolean;
   currentConfigPanelNodeForm: NodeType | undefined;
 
-  setCurrentConfigPanelNodeForm: (nodeType: NodeType) => void;
+  setCurrentConfigPanelNodeForm: (nodeType: NodeType | undefined) => void;
   openConfigPanel: () => void;
   closeConfigPanel: () => void;
 };
@@ -14,7 +14,7 @@ export const useConfigPanel = create<ConfigPanelState>((set) => ({
   isConfigPanelOpen: false,
   currentConfigPanelNodeForm: undefined,
 
-  setCurrentConfigPanelNodeForm: (nodeType: NodeType) => {
+  setCurrentConfigPanelNodeForm: (nodeType: NodeType | undefined) => {
     set({ currentConfigPanelNodeForm: nodeType });
   },
   openConfigPanel: () => {

@@ -1,8 +1,48 @@
 import nodemailer from "nodemailer";
+import z from "zod";
+import { prisma } from "../../backend/utils/db";
 
-export async function sendEmail(): Promise<{ messageId: string }> {
-  const GMAIL_USER = process.env.GMAIL_USER;
-  const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
+export const sendEmailMetadataSchema = z.object({
+  from: z.string(),
+  to: z.email(),
+  subject: z.string(),
+  body: z.string(),
+});
+
+const emailCredentialsMetadata = z.object({
+  GMAIL_USER: z.email(),
+  GMAIL_APP_PASSWORD: z.string(),
+});
+
+async function getEmailCredential(credentialId: string) {
+  const credential = await prisma.credential.findUnique({
+    where: { id: credentialId },
+  });
+  if (!credential) {
+    throw "unable to get email credentials";
+  }
+  const { success, data } = emailCredentialsMetadata.safeParse(
+    credential.metadata,
+  );
+  if (!success) {
+    throw "unable to parse email credential";
+  }
+  return data;
+}
+
+async function send(){
+}
+
+export async function sendEmail(
+  metadata: Record<string, unknown>,
+): Promise<{ messageId: string }> {
+  const { success, data } = sendEmailMetadataSchema.safeParse(metadata);
+  if (!success) {
+    throw "unable to parse email data";
+  }
+  const { from, to, subject, body } = data;
+  const { GMAIL_USER, GMAIL_APP_PASSWORD } = await getEmailCredential(from);
+
   if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
     throw "No Gmail Credentials found";
   }
@@ -11,18 +51,17 @@ export async function sendEmail(): Promise<{ messageId: string }> {
     port: 465,
     secure: true,
     auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
+      user: GMAIL_USER,
+      pass: GMAIL_APP_PASSWORD,
     },
   });
 
   const info = await transporter.sendMail({
     from: GMAIL_USER,
-    to: GMAIL_USER,
-    subject: "n8n test",
-    text: "n8n test",
+    to,
+    subject,
+    text: body,
   });
 
-  console.log("mail sent successfully", info);
   return { messageId: info.messageId };
 }

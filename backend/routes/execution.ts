@@ -5,45 +5,34 @@ import { ExecutionStatus } from "../generated/prisma";
 import { RedisManager } from "../utils/redis";
 export const router = express.Router();
 
-router.post("/execute/:id", async (req, res) => {
-  assert(req.user);
-  const id = req.params.id;
-
-  const workflowExists = await prisma.workflow.findUnique({
-    where: { id },
+export async function enqueueExecution(workflowId: string) {
+  const existingWorkflow = await prisma.workflow.findUnique({
+    where: { id: workflowId },
   });
-  if (!workflowExists) {
-    return res
-      .json({
-        success: false,
-        error: "provided workflow Id doesn't exist",
-      })
-      .status(400);
+  if (!existingWorkflow) {
+    throw new Error("provided workflow Id doesn't exist");
   }
   const execution = await prisma.execution.create({
     data: {
-      workflowId: id,
+      workflowId: existingWorkflow.id,
       status: ExecutionStatus.QUEUED,
     },
   });
-  if (!execution) {
-    return res
-      .json({
-        success: false,
-        error: "coudn't create an execution",
-      })
-      .status(500);
-  }
-
   const redisManager = RedisManager.getInstance();
   const qLength = await redisManager.pushExection(execution.id);
 
   if (qLength <= 0) {
-    console.error("error queuing execution");
-    return res.json({
-      success: false,
-      error: "error queuing execution",
-    });
+    throw new Error("error Queuing Exeution");
+  }
+  return execution;
+}
+
+router.post("/execute/:id", async (req, res) => {
+  assert(req.user);
+  const id = req.params.id;
+  const execution = await enqueueExecution(id);
+  if (!execution) {
+    throw new Error("execution couldn't be queued");
   }
   return res.json({
     success: true,

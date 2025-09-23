@@ -7,8 +7,18 @@ export type WorkflowWithNodesAndEdges = Prisma.WorkflowGetPayload<{
         outgoingEdges: true;
         incomingEdges: true;
         nodeType: true;
+        metadata: true;
       };
     };
     edges: true;
+  };
+}>;
+
+export type NodeWithIncomingAndOutgoingEdges = Prisma.NodeGetPayload<{
+  include: {
+    outgoingEdges: true;
+    incomingEdges: true;
+    nodeType: true;
+    metadata: true;
   };
 }>;

@@ -12,8 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CreateWorkflowDialog } from "@/components/workflow/dialog/Create";
 import { ApiWorkflow } from "../types";
+import { CreateWorkflowDialog } from "@/components/workflow/CreateWorkflow";
 
 export function WorkflowGrid({ workflows }: { workflows: ApiWorkflow[] }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -90,6 +90,7 @@ export function WorkflowGrid({ workflows }: { workflows: ApiWorkflow[] }) {
           </div>
 
           <CreateWorkflowDialog />
+          
         </div>
       </div>
 
