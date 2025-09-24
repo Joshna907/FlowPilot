@@ -114,9 +114,37 @@ export class ExecutionManager {
     });
   }
 
+  private resolveAtMentionsInString(
+    template: string,
+    outputs: Record<string, unknown>,
+  ): string {
+    return template.replace(
+      /@([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9_]+)*)\b/g,
+      (match, expr) => {
+        const pathParts = String(expr).trim().split(".");
+        const nodeId = pathParts.shift();
+        if (!nodeId) return match;
+        // Only resolve when nodeId exists in outputs to avoid replacing emails/usernames
+        if (!(nodeId in outputs)) return match;
+        let current: any = outputs[nodeId as string] as any;
+        for (const segment of pathParts) {
+          if (current == null) return "";
+          current = (current as any)[segment];
+        }
+        if (typeof current === "string") return current;
+        try {
+          return JSON.stringify(current);
+        } catch {
+          return String(current ?? "");
+        }
+      },
+    );
+  }
+
   private resolveMetadataValues(value: unknown): unknown {
     if (typeof value === "string") {
-      return this.resolveTemplatesInString(value, this.output);
+      const withAt = this.resolveAtMentionsInString(value, this.output);
+      return this.resolveTemplatesInString(withAt, this.output);
     }
     if (Array.isArray(value)) {
       return value.map((v) => this.resolveMetadataValues(v));
@@ -163,7 +191,7 @@ export class ExecutionManager {
       while (this.executionStack.length > 0) {
         const currentNode = this.executionStack.pop();
         assert(currentNode);
-
+        console.log("currently executing -", currentNode);
         const executor = executableNodes[currentNode.nodeType];
         if (executor) {
           const metadata = currentNode.metadata;

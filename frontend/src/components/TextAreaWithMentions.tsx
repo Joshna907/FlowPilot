@@ -21,14 +21,40 @@ export function TextAreaWithMention({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const nodes = useWorkflow((s) => s.nodes);
+  const edges = useWorkflow((s) => s.edges);
+  const selectedNodeId = useWorkflow((s) => s.selectedNodeId);
   const options = useMemo(() => {
-    return nodes
-      .map((n) => ({
-        id: n.id,
-        label: n.data?.label as string | undefined,
-      }))
+    let eligibleNodes = nodes;
+    if (selectedNodeId) {
+      const ancestorIds = new Set<string>();
+      const visited = new Set<string>();
+      const stack: string[] = [];
+
+      for (const e of edges) {
+        if (e.target === selectedNodeId) {
+          stack.push(e.source);
+        }
+      }
+
+      while (stack.length > 0) {
+        const currentId = stack.pop()!;
+        if (visited.has(currentId)) continue;
+        visited.add(currentId);
+        ancestorIds.add(currentId);
+        for (const e of edges) {
+          if (e.target === currentId) {
+            if (!visited.has(e.source)) stack.push(e.source);
+          }
+        }
+      }
+
+      eligibleNodes = nodes.filter((n) => ancestorIds.has(n.id));
+    }
+
+    return eligibleNodes
+      .map((n) => ({ id: n.id, label: n.data?.label as string | undefined }))
       .filter((o) => Boolean(o.label)) as { id: string; label: string }[];
-  }, [nodes]);
+  }, [nodes, edges, selectedNodeId]);
 
   const [value, setValue] = useState<string>(defaultValue);
   const [isOpen, setIsOpen] = useState<boolean>(false);

@@ -48,7 +48,7 @@ export function HttpRequestForm() {
   }
 
   function handleTextAreaValueChange(value: string) {
-    console.log({ value });
+    form.setValue("body", value);
   }
 
   return (
@@ -68,6 +68,7 @@ export function HttpRequestForm() {
           )}
         />
         <TextAreaWithMention
+          defaultValue={data?.body}
           onResolvedChange={handleTextAreaValueChange}
           placeholder=""
           className="resize-none"
