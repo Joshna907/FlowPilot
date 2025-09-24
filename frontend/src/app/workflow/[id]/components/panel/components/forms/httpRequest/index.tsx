@@ -13,7 +13,7 @@ import z from "zod";
 import { useConfigPanel, useWorkflow } from "@/stores";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Textarea } from "@/components/ui/textarea";
+import { TextAreaWithMention } from "@/components/TextAreaWithMentions";
 
 const httpRequestFormSchema = z.object({
   endpoint: z.string(),
@@ -47,6 +47,10 @@ export function HttpRequestForm() {
     closeConfigPanel();
   }
 
+  function handleTextAreaValueChange(value: string) {
+    console.log({ value });
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -63,18 +67,10 @@ export function HttpRequestForm() {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="body"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Body</FormLabel>
-              <FormControl>
-                <Textarea placeholder="" className="resize-none" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+        <TextAreaWithMention
+          onResolvedChange={handleTextAreaValueChange}
+          placeholder=""
+          className="resize-none"
         />
         <Button type="submit">Submit</Button>
       </form>

@@ -72,7 +72,7 @@ export function CustomNode({
 function EditNodeLabel({ nodeId }: { nodeId: string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const ref = useClickAway(() => {
+  const ref = useClickAway<HTMLDivElement>(() => {
     handleStopEditing();
   });
 
@@ -106,7 +106,7 @@ function EditNodeLabel({ nodeId }: { nodeId: string }) {
   }
 
   return (
-    <div className="flex group gap-1">
+    <div ref={ref} className="flex group gap-1">
       {isEditing ? (
         <Input
           value={inputValue}
