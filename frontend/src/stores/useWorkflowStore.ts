@@ -80,9 +80,10 @@ type WorkflowState = {
     metadata?: Record<string, unknown>;
   }) => void;
   addNewEmptyNode: () => void;
+  updateNodeLabel: (input: { nodeId: string; label: string }) => void;
 };
 
-export const useWorkflow = create<WorkflowState>((set) => ({
+export const useWorkflow = create<WorkflowState>((set, get) => ({
   nodes: initialNodes,
   edges: initialEdges,
 
@@ -130,6 +131,32 @@ export const useWorkflow = create<WorkflowState>((set) => ({
         ...allNodes[foundNodeIndex],
         ...(type && { type }),
         ...(metadata && { data: metadata }),
+      };
+      const allNodesClone = [...allNodes];
+      allNodesClone[foundNodeIndex] = updatedFoundNode;
+      return { nodes: allNodesClone };
+    });
+  },
+
+  updateNodeLabel: ({ nodeId, label }: { nodeId: string; label: string }) => {
+    set((s) => {
+      const allNodes = s.nodes;
+      const foundNodeIndex = allNodes.findIndex((node) => node.id === nodeId);
+      if (foundNodeIndex === -1) {
+        toast.error("unable to find given node Id");
+        return {};
+      }
+      // find if other node has the same label
+      const foundLabel = allNodes.find((n) => {
+        return n.data.label === label;
+      });
+      if (foundLabel) {
+        toast.error("same label exists , please use a different label");
+        return {};
+      }
+      const updatedFoundNode = {
+        ...allNodes[foundNodeIndex],
+        data: { ...allNodes[foundNodeIndex].data, label },
       };
       const allNodesClone = [...allNodes];
       allNodesClone[foundNodeIndex] = updatedFoundNode;
@@ -193,6 +220,7 @@ export const useWorkflow = create<WorkflowState>((set) => ({
         target: lastNodeId,
         type: "step",
       });
+      console.log({ edges: nextEdges, nodes: nextNodes });
       return { edges: nextEdges, nodes: nextNodes };
     });
   },

@@ -1,7 +1,7 @@
 import { type NodeProps, type Node } from "@xyflow/react";
 import { CustomNode } from "./components/CustomNode";
 import { Button } from "@/components/ui/button";
-import { MailCheck } from "lucide-react";
+import { MailCheck, Reply } from "lucide-react";
 
 export function SendEmailAndAwaitReplyNode(
   node: NodeProps<Node<{ label: string }>>,
@@ -10,6 +10,7 @@ export function SendEmailAndAwaitReplyNode(
     <CustomNode nodeId={node.id}>
       <Button>
         <MailCheck />
+        <Reply />
       </Button>
     </CustomNode>
   );

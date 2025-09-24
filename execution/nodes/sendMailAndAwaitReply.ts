@@ -68,7 +68,6 @@ export async function pollForReplyOnThread(
     const interval = setInterval(async () => {
       tries++;
       try {
-        // 1. Get all messages in this thread
         const thread = await gmail.users.threads.get({
           userId: "me",
           id: threadId,
@@ -77,11 +76,9 @@ export async function pollForReplyOnThread(
 
         const messages = thread.data.messages ?? [];
 
-        // 2. If more than 1 message in thread, treat later ones as replies
         if (messages.length > 1) {
           clearInterval(interval);
 
-          // Take the last message (latest reply)
           const latest = messages[messages.length - 1];
           const body =
             extractText(latest?.payload) || latest?.snippet || "(no body)";

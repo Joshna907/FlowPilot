@@ -25,6 +25,7 @@ import { useConfigPanel, useWorkflow } from "@/stores";
 import { NodeType } from "@/stores/useWorkflowStore";
 import { useGetUserGoogleAccounts } from "./hook";
 import { GoogleIntegration } from "@/components/integrations";
+import { useGetDefaultNodeLabel } from "@/hooks/useGetNewNodeLabel";
 
 const sendEmailFormSchema = z.object({
   from: z.string(),
@@ -60,12 +61,15 @@ export function SendEmailForm({ nodeType }: { nodeType: NodeType }) {
   });
 
   const data = useGetUserGoogleAccounts();
-  console.log({ data });
   const updateSelectedNode = useWorkflow((state) => state.updateSelectedNode);
   const closeConfigPanel = useConfigPanel((state) => state.closeConfigPanel);
+  const getDefaultLabel = useGetDefaultNodeLabel(nodeType);
 
   function onSubmit(values: SendEmailFormSchema) {
-    updateSelectedNode({ metadata: values, type: nodeType });
+    updateSelectedNode({
+      metadata: { ...values, label: getDefaultLabel() },
+      type: nodeType,
+    });
     closeConfigPanel();
   }
   return (

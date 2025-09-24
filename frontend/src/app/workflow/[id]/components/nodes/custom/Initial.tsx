@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 export function InitialNode(node: NodeProps<Node<{ label: string }>>) {
   return (
     <CustomNode nodeId={node.id}>
-      <Button variant="ghost">Select A Trigger</Button>
+      <Button size="sm" variant="ghost">
+        Select A Trigger
+      </Button>
     </CustomNode>
   );
 }

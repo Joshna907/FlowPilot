@@ -90,6 +90,47 @@ export class ExecutionManager {
     return removedNode;
   }
 
+  private resolveTemplatesInString(
+    template: string,
+    outputs: Record<string, unknown>,
+  ): string {
+    return template.replace(/\{\{\s*([^}]+)\s*\}\}/g, (_match, expr) => {
+      const pathParts = String(expr).trim().split(".");
+      const nodeId = pathParts.shift();
+      if (!nodeId) return "";
+      const nodeOutput = outputs[nodeId as string];
+      if (nodeOutput === undefined || nodeOutput === null) return "";
+      let current: any = nodeOutput as any;
+      for (const segment of pathParts) {
+        if (current == null) return "";
+        current = (current as any)[segment];
+      }
+      if (typeof current === "string") return current;
+      try {
+        return JSON.stringify(current);
+      } catch {
+        return String(current ?? "");
+      }
+    });
+  }
+
+  private resolveMetadataValues(value: unknown): unknown {
+    if (typeof value === "string") {
+      return this.resolveTemplatesInString(value, this.output);
+    }
+    if (Array.isArray(value)) {
+      return value.map((v) => this.resolveMetadataValues(v));
+    }
+    if (value && typeof value === "object") {
+      const result: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+        result[k] = this.resolveMetadataValues(v);
+      }
+      return result;
+    }
+    return value;
+  }
+
   public async execute() {
     try {
       // find trigger node based on the type
@@ -126,7 +167,10 @@ export class ExecutionManager {
         const executor = executableNodes[currentNode.nodeType];
         if (executor) {
           const metadata = currentNode.metadata;
-          const result = await executor(metadata as Record<string, unknown>);
+          const resolvedMetadata = this.resolveMetadataValues(
+            metadata,
+          ) as Record<string, unknown>;
+          const result = await executor(resolvedMetadata);
           this.output[currentNode.id] = result;
         }
 

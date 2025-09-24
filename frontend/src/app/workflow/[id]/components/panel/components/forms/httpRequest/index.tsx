@@ -13,6 +13,7 @@ import z from "zod";
 import { useConfigPanel, useWorkflow } from "@/stores";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Textarea } from "@/components/ui/textarea";
 
 const httpRequestFormSchema = z.object({
   endpoint: z.string(),
@@ -22,16 +23,25 @@ const httpRequestFormSchema = z.object({
 type HttpRequestFormSchema = z.infer<typeof httpRequestFormSchema>;
 
 export function HttpRequestForm() {
+  const selectedNodeMetadata = useWorkflow((state) => {
+    return state.nodes.find((node) => {
+      return node.id === state.selectedNodeId;
+    })?.data;
+  });
+
+  const { data } = httpRequestFormSchema.safeParse(selectedNodeMetadata);
+
   const form = useForm<HttpRequestFormSchema>({
     resolver: zodResolver(httpRequestFormSchema),
     defaultValues: {
-      endpoint: "",
-      body: "",
+      endpoint: data?.endpoint ?? "",
+      body: data?.body ?? "",
     },
   });
 
   const updateSelectedNode = useWorkflow((state) => state.updateSelectedNode);
   const closeConfigPanel = useConfigPanel((state) => state.closeConfigPanel);
+
   function onSubmit(values: HttpRequestFormSchema) {
     updateSelectedNode({ metadata: values, type: NodeType.HTTP_REQUEST });
     closeConfigPanel();
