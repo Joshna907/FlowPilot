@@ -1,4 +1,4 @@
-import { NodeType } from "@/stores/useWorkflowStore";
+import { EdgeType, NodeType } from "@/stores/useWorkflowStore";
 
 export type ApiWorkflow = {
   id: string;
@@ -26,7 +26,8 @@ export type ApiEdge = {
   id: string;
   sourceNodeId: string;
   targetNodeId: string;
-  edgeType: string;
+  edgeType: EdgeType;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 };

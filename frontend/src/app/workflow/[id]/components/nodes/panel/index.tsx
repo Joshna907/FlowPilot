@@ -22,7 +22,13 @@ export function NodesPanel() {
   const selectedNode = useWorkflow((state) => {
     return state.nodes.find((node) => state.selectedNodeId === node.id);
   });
-  const isConfigPanelOpen = useConfigPanel((state) => state.isConfigPanelOpen);
+
+  const isNodeConfigPanelOpen = useConfigPanel(
+    (state) => state.isNodeConfigPanelOpen,
+  );
+
+  const isConfigPanelOpen = isNodeConfigPanelOpen;
+
   const closeConfigPanel = useConfigPanel((state) => state.closeConfigPanel);
   const currentConfigPanelNodeForm = useConfigPanel(
     (state) => state.currentConfigPanelNodeForm,

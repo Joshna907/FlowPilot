@@ -1,3 +1,5 @@
+"use client";
+
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useConfigPanel, useWorkflow } from "@/stores";
@@ -20,7 +22,9 @@ export function CustomNode({
   onClick?: () => void;
 }) {
   const setSelectedNodeId = useWorkflow((state) => state.setSelectedNodeId);
-  const openConfigPanel = useConfigPanel((state) => state.openConfigPanel);
+  const openNodeConfigPanel = useConfigPanel(
+    (state) => state.openNodeConfigPanel,
+  );
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleSelectNodeId() {
@@ -58,7 +62,7 @@ export function CustomNode({
             clickTimeoutRef.current = null;
           }
           if (preventDefault) return;
-          openConfigPanel();
+          openNodeConfigPanel();
         }}
       >
         <EditNodeLabel nodeId={nodeId} />

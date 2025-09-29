@@ -8,7 +8,7 @@ import {
   ApiNodeInput,
 } from "@/app/workflow/types";
 import { Node, Edge } from "@xyflow/react";
-import { NodeType } from "@/stores/useWorkflowStore";
+import { EdgeType, NodeType } from "@/stores/useWorkflowStore";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,7 +32,8 @@ export function convertApiEdgeToState(edge: ApiEdge): Edge {
     id: edge.id,
     source: edge.sourceNodeId,
     target: edge.targetNodeId,
-    type: "step",
+    type: edge.edgeType,
+    data: edge.metadata,
   };
 }
 
@@ -51,6 +52,7 @@ export function convertStateToApiEdge(edge: Edge): ApiEdgeInput {
     id: edge.id,
     sourceNodeId: edge.source,
     targetNodeId: edge.target,
-    edgeType: edge.type ?? "step",
+    edgeType: (edge.type as EdgeType.STEP) ?? EdgeType.STEP,
+    ...(edge.data && { metadata: edge.data }),
   };
 }

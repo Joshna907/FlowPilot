@@ -21,6 +21,7 @@ enum NodeType {
 
 enum EdgeType {
   STEP
+  IF
 }
 
 enum ProviderType {
@@ -96,6 +97,7 @@ model Edge {
   targetNode   Node      @relation("edgeTarget", fields: [targetNodeId], references: [id], onDelete: Cascade)
   targetNodeId String
   edgeType     EdgeType
+  metadata     Json?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

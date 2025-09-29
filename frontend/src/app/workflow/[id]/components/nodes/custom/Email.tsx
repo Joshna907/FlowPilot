@@ -1,5 +1,5 @@
 import { type NodeProps, type Node } from "@xyflow/react";
-import { CustomNode } from "./components/CustomNode";
+import { CustomNode } from "./CustomNode";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 

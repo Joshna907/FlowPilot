@@ -1,26 +1,43 @@
 import { create } from "zustand";
-import type { NodeType } from "./useWorkflowStore";
+import type { EdgeType, NodeType } from "./useWorkflowStore";
 
 type ConfigPanelState = {
-  isConfigPanelOpen: boolean;
+  isNodeConfigPanelOpen: boolean;
+  isEdgeConfigPanelOpen: boolean;
   currentConfigPanelNodeForm: NodeType | undefined;
+  currentConfigPanelEdgeForm: EdgeType | undefined;
 
   setCurrentConfigPanelNodeForm: (nodeType: NodeType | undefined) => void;
-  openConfigPanel: () => void;
+  setCurrentConfigPanelEdgeForm: (edgeType: EdgeType | undefined) => void;
+  openNodeConfigPanel: () => void;
+  openEdgeConfigPanel: () => void;
   closeConfigPanel: () => void;
 };
 
 export const useConfigPanel = create<ConfigPanelState>((set) => ({
-  isConfigPanelOpen: false,
+  isNodeConfigPanelOpen: false,
+  isEdgeConfigPanelOpen: false,
   currentConfigPanelNodeForm: undefined,
+  currentConfigPanelEdgeForm: undefined,
 
   setCurrentConfigPanelNodeForm: (nodeType: NodeType | undefined) => {
     set({ currentConfigPanelNodeForm: nodeType });
   },
-  openConfigPanel: () => {
-    set({ isConfigPanelOpen: true });
+  setCurrentConfigPanelEdgeForm: (edgeType: EdgeType | undefined) => {
+    set({ currentConfigPanelEdgeForm: edgeType });
+  },
+  openNodeConfigPanel: () => {
+    set({ isNodeConfigPanelOpen: true });
+  },
+  openEdgeConfigPanel: () => {
+    set({ isEdgeConfigPanelOpen: true });
   },
   closeConfigPanel: () => {
-    set({ isConfigPanelOpen: false, currentConfigPanelNodeForm: undefined });
+    set({
+      isNodeConfigPanelOpen: false,
+      isEdgeConfigPanelOpen: false,
+      currentConfigPanelNodeForm: undefined,
+      currentConfigPanelEdgeForm: undefined,
+    });
   },
 }));

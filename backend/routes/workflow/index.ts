@@ -80,6 +80,7 @@ router.put("/update/:id", async (req, res) => {
     id: req.params.id,
     ...req.body,
   });
+
   if (!success) {
     console.error({ error });
     return res
@@ -139,7 +140,7 @@ router.put("/update/:id", async (req, res) => {
             nodeType: node.nodeType,
             positionX: node.positionX,
             positionY: node.positionY,
-            metadata: node.metadata as unknown as Prisma.InputJsonValue,
+            metadata: node.metadata as Prisma.InputJsonValue,
           },
           create: {
             id: node.id,
@@ -147,7 +148,7 @@ router.put("/update/:id", async (req, res) => {
             nodeType: node.nodeType,
             positionX: node.positionX,
             positionY: node.positionY,
-            metadata: node.metadata as unknown as Prisma.InputJsonValue,
+            metadata: node.metadata as Prisma.InputJsonValue,
           },
         });
       });
@@ -162,13 +163,16 @@ router.put("/update/:id", async (req, res) => {
           update: {
             sourceNodeId: edge.sourceNodeId,
             targetNodeId: edge.targetNodeId,
+            edgeType: edge.edgeType as EdgeType,
+            metadata: edge.metadata as Prisma.InputJsonValue,
           },
           create: {
             id: edge.id,
             workflowId: data.id,
-            edgeType: EdgeType.STEP,
             sourceNodeId: edge.sourceNodeId,
             targetNodeId: edge.targetNodeId,
+            edgeType: edge.edgeType as EdgeType,
+            metadata: edge.metadata as Prisma.InputJsonValue,
           },
         }),
       );

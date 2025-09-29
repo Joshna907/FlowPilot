@@ -1,5 +1,5 @@
 import { type NodeProps, type Node } from "@xyflow/react";
-import { CustomNode } from "./components/CustomNode";
+import { CustomNode } from "./CustomNode";
 import { useMutation } from "@tanstack/react-query";
 import { useWorkflow } from "@/stores";
 import { toast } from "sonner";

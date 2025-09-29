@@ -15,13 +15,14 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useWorkflow } from "@/stores";
-import { NodesPanel } from "./components/panel";
-import { nodeTypes } from "@/stores/useWorkflowStore";
+import { edgeTypes, nodeTypes } from "@/stores/useWorkflowStore";
 import { useCallback, useEffect } from "react";
 import _ from "lodash";
 import { convertApiEdgeToState, convertApiNodeToState } from "@/lib/utils";
 import { UpdateWorkflowButton } from "./components/buttons/UpdateWorkflow";
 import { ApiWorkflow } from "../types";
+import { NodesPanel } from "./components/nodes/panel";
+import { EdgesPanel } from "./components/edges/panel";
 
 export default function Playground({ workflow }: { workflow: ApiWorkflow }) {
   const nodes = useWorkflow((state) => state.nodes);
@@ -73,6 +74,7 @@ export default function Playground({ workflow }: { workflow: ApiWorkflow }) {
         </div>
         <div className="flex justify-end">
           <NodesPanel />
+          <EdgesPanel />
         </div>
         <ReactFlow
           nodes={nodes}
@@ -80,6 +82,7 @@ export default function Playground({ workflow }: { workflow: ApiWorkflow }) {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onConnect={onConnect}
           fitView
         />

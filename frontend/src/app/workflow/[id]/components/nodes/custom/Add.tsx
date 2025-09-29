@@ -1,7 +1,7 @@
 import { type NodeProps, type Node } from "@xyflow/react";
-import { CustomNode } from "./components/CustomNode";
 import { Button } from "@/components/ui/button";
 import { useWorkflow } from "@/stores";
+import { CustomNode } from "./CustomNode";
 
 export function AddNode(node: NodeProps<Node<{ label: string }>>) {
   const addNewEmptyNode = useWorkflow((state) => state.addNewEmptyNode);

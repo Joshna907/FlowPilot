@@ -5,6 +5,8 @@ import {
   AddNode,
   EmailNode,
   SendEmailAndAwaitReplyNode,
+  WebhookTriggerNode,
+  HttpRequestNode,
 } from "@/app/workflow/[id]/components/nodes/custom";
 import { toast } from "sonner";
 import { Edge, Node } from "@xyflow/react";
@@ -12,8 +14,10 @@ import { create } from "zustand";
 import { SetterFunction } from "./types";
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
-import { WebhookTriggerNode } from "@/app/workflow/[id]/components/nodes/custom/WebhookTrigger";
-import { HttpRequestNode } from "@/app/workflow/[id]/components/nodes/custom/HttpRequest";
+import {
+  CustomEdge,
+  IfEdge,
+} from "@/app/workflow/[id]/components/edges/custom";
 
 export enum NodeType {
   ADD_NODE = "ADD_NODE",
@@ -24,6 +28,11 @@ export enum NodeType {
   MANUAL_TRIGGER = "MANUAL_TRIGGER",
   SEND_EMAIL_AND_AWAIT_REPLY = "SEND_EMAIL_AND_AWAIT_REPLY",
   HTTP_REQUEST = "HTTP_REQUEST",
+}
+
+export enum EdgeType {
+  STEP = "STEP",
+  IF = "IF",
 }
 
 export const WORKFLOW_GAP_X = 200;
@@ -37,6 +46,11 @@ export const nodeTypes = {
   [NodeType.SEND_EMAIL]: EmailNode,
   [NodeType.SEND_EMAIL_AND_AWAIT_REPLY]: SendEmailAndAwaitReplyNode,
   [NodeType.HTTP_REQUEST]: HttpRequestNode,
+} as const;
+
+export const edgeTypes = {
+  [EdgeType.STEP]: CustomEdge,
+  [EdgeType.IF]: IfEdge,
 } as const;
 
 const initialNodes: Node[] = [
@@ -59,7 +73,8 @@ const initialEdges: Edge[] = [
     id: `${initialNodes[0].id}-${initialNodes[1].id}`,
     source: initialNodes[0].id,
     target: initialNodes[1].id,
-    type: "step",
+    type: EdgeType.STEP,
+    data: {},
   },
 ];
 
@@ -74,7 +89,13 @@ type WorkflowState = {
   setNodes: (nodes: SetterFunction<Node[]>) => void;
   setEdges: (edges: SetterFunction<Edge[]>) => void;
   selectedNodeId: string | undefined;
-  setSelectedNodeId: (nodeId: string) => void;
+  selectedEdgeId: string | undefined;
+  setSelectedEdgeId: (edgeId: string) => void;
+  setSelectedNodeId: (edgeId: string) => void;
+  updateSelectedEdge: (input: {
+    type?: EdgeType;
+    metadata?: Record<string, unknown>;
+  }) => void;
   updateSelectedNode: (input: {
     type?: NodeType;
     metadata?: Record<string, unknown>;
@@ -83,9 +104,11 @@ type WorkflowState = {
   updateNodeLabel: (input: { nodeId: string; label: string }) => void;
 };
 
-export const useWorkflow = create<WorkflowState>((set, get) => ({
+export const useWorkflow = create<WorkflowState>((set) => ({
   nodes: initialNodes,
   edges: initialEdges,
+  selectedNodeId: undefined,
+  selectedEdgeId: undefined,
 
   workflow: {
     id: "",
@@ -106,12 +129,41 @@ export const useWorkflow = create<WorkflowState>((set, get) => ({
       edges: typeof edges === "function" ? edges(state.edges) : edges,
     })),
 
-  selectedNodeId: undefined,
   setSelectedNodeId: (nodeId: string) =>
     set({
       selectedNodeId: nodeId,
     }),
 
+  setSelectedEdgeId: (edgeId: string) =>
+    set({
+      selectedEdgeId: edgeId,
+    }),
+
+  updateSelectedEdge: ({
+    type,
+    metadata,
+  }: {
+    type?: EdgeType;
+    metadata?: Record<string, unknown>;
+  }) => {
+    set((s) => {
+      const allEdges = s.edges;
+      const foundEdgeIndex = allEdges.findIndex(
+        (edge) => edge.id === s.selectedEdgeId,
+      );
+      if (foundEdgeIndex === -1) {
+        toast.error("unable to find selected edge Id");
+      }
+      const updatedFoundEdge = {
+        ...allEdges[foundEdgeIndex],
+        ...(type && { type }),
+        ...(metadata && { data: metadata }),
+      };
+      const allEdgesClone = [...allEdges];
+      allEdgesClone[foundEdgeIndex] = updatedFoundEdge;
+      return { edges: allEdgesClone };
+    });
+  },
   updateSelectedNode: ({
     type,
     metadata,
