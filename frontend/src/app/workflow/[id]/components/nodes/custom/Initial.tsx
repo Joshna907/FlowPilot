@@ -6,7 +6,7 @@ export function InitialNode(node: NodeProps<Node<{ label: string }>>) {
   return (
     <CustomNode nodeId={node.id}>
       <Button size="sm" variant="ghost">
-        Select A Trigger
+        Select trigger
       </Button>
     </CustomNode>
   );

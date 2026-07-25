@@ -1,13 +1,18 @@
 "use client";
 
 import {
-  MoreHorizontal,
-  Play,
-  Copy,
   Archive,
-  Edit3,
+  ArrowRight,
   Clock,
+  Copy,
+  Edit3,
+  MoreHorizontal,
+  RotateCcw,
+  Trash2,
+  Workflow,
 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,93 +24,156 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ApiWorkflow } from "../types";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/utils";
 
-export function WorkflowCard({ workflow }: { workflow: ApiWorkflow }) {
+export function WorkflowCard({
+  workflow,
+  onChanged,
+  onDeleted,
+}: {
+  workflow: ApiWorkflow;
+  onChanged?: (workflow: ApiWorkflow) => void;
+  onDeleted?: (workflowId: string) => void;
+}) {
   const router = useRouter();
   const isArchived = workflow.archivedAt !== null;
+  const isPublished = workflow.publishedAt !== null;
   const timeSince = getTimeSince(workflow.updatedAt);
-
-  const handleEdit = () => {
-    console.log("Edit workflow:", workflow.id);
-  };
-
-  const handleDuplicate = () => {
-    console.log("Duplicate workflow:", workflow.id);
-  };
-
-  const handleArchive = () => {
-    console.log("Archive workflow:", workflow.id);
-  };
 
   const handleExplore = () => {
     router.push(`workflow/${workflow.id}`);
   };
 
+  const archiveWorkflow = useMutation({
+    mutationFn: async () => {
+      const action = isArchived ? "unarchive" : "archive";
+      return api.post(`/workflow/${action}/${workflow.id}`);
+    },
+    onSuccess: ({ data }) => {
+      if (!data.success) {
+        toast.error("Unable to update workflow");
+        return;
+      }
+      onChanged?.(data.data.workflow);
+      toast.success(isArchived ? "Workflow restored" : "Workflow archived");
+    },
+    onError: () => toast.error("Unable to update workflow"),
+  });
+
+  const deleteWorkflow = useMutation({
+    mutationFn: async () => api.delete(`/workflow/${workflow.id}`),
+    onSuccess: ({ data }) => {
+      if (!data.success) {
+        toast.error("Unable to delete workflow");
+        return;
+      }
+      onDeleted?.(workflow.id);
+      toast.success("Workflow deleted");
+    },
+    onError: () => toast.error("Unable to delete workflow"),
+  });
+
+  const handleDelete = () => {
+    const confirmed = window.confirm(
+      `Delete "${workflow.name}" forever? This cannot be undone.`,
+    );
+    if (confirmed) {
+      deleteWorkflow.mutate();
+    }
+  };
+
+  const actionsDisabled = archiveWorkflow.isPending || deleteWorkflow.isPending;
+
   return (
     <div className="workflow-card group animate-scale-in">
-      <div className="absolute top-4 right-4">
-        <Badge
-          variant={isArchived ? "secondary" : "default"}
-          className={
-            isArchived ? "workflow-status-archived" : "workflow-status-active"
-          }
-        >
-          {isArchived ? "Archived" : "Active"}
-        </Badge>
+      <div className="absolute right-4 top-4">
+        <div className="flex gap-2">
+          {isPublished && <Badge variant="secondary">Published</Badge>}
+          <Badge
+            variant={isArchived ? "secondary" : "default"}
+            className={
+              isArchived ? "workflow-status-archived" : "workflow-status-active"
+            }
+          >
+            {isArchived ? "Archived" : "Active"}
+          </Badge>
+        </div>
       </div>
 
-      {/* Workflow content */}
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-card-foreground group-hover:gradient-text transition-all duration-300">
-            {workflow.name}
-          </h3>
-
-          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-            <div className="flex items-center space-x-1">
+      <div className="space-y-5">
+        <div className="space-y-3 pr-20">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-[var(--flow-canvas)] text-[var(--flow-primary)]">
+            <Workflow className="size-5" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-card-foreground transition-colors group-hover:text-[var(--flow-primary)]">
+              {workflow.name}
+            </h3>
+            <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
               <Clock className="h-3 w-3" />
               <span>Updated {timeSince}</span>
             </div>
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className={`flex items-center justify-between`}>
-          <div className="flex items-center space-x-2">
-            {!isArchived && (
-              <Button
-                size="sm"
-                onClick={handleExplore}
-                className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200"
-              >
-                <Play className="h-4 w-4 mr-1" />
-                Explore
-              </Button>
-            )}
-          </div>
+        <div className="flex items-center justify-between">
+          {!isArchived ? (
+            <Button
+              size="sm"
+              onClick={handleExplore}
+              className="bg-primary/10 text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground"
+            >
+              Open
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          ) : (
+            <span className="text-sm text-muted-foreground">Archived</span>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="workflow-action-btn">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="workflow-action-btn"
+                disabled={actionsDisabled}
+              >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={handleEdit}>
+              <DropdownMenuItem
+                onClick={() => toast.info("Rename is coming soon")}
+              >
                 <Edit3 className="mr-2 h-4 w-4" />
-                Edit
+                Rename
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDuplicate}>
+              <DropdownMenuItem
+                onClick={() => toast.info("Duplicate is coming soon")}
+              >
                 <Copy className="mr-2 h-4 w-4" />
                 Duplicate
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={handleArchive}
-                className="text-destructive focus:text-destructive"
+                disabled={actionsDisabled}
+                onClick={() => archiveWorkflow.mutate()}
               >
-                <Archive className="mr-2 h-4 w-4" />
+                {isArchived ? (
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                ) : (
+                  <Archive className="mr-2 h-4 w-4" />
+                )}
                 {isArchived ? "Unarchive" : "Archive"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                disabled={actionsDisabled}
+                onClick={handleDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete forever
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -124,9 +192,9 @@ function getTimeSince(dateString: string): string {
 
   if (diffInDays > 0) {
     return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
-  } else if (diffInHours > 0) {
-    return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
-  } else {
-    return "Less than an hour ago";
   }
+  if (diffInHours > 0) {
+    return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
+  }
+  return "Less than an hour ago";
 }

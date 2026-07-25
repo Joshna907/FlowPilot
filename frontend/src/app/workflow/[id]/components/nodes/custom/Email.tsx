@@ -6,7 +6,7 @@ import { Mail } from "lucide-react";
 export function EmailNode(node: NodeProps<Node<{ label: string }>>) {
   return (
     <CustomNode nodeId={node.id}>
-      <Button>
+      <Button className="flow-node-icon" variant="ghost" size="icon">
         <Mail />
       </Button>
     </CustomNode>

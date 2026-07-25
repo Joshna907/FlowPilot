@@ -17,6 +17,8 @@ export const nodeCategories: Record<NodeCategory, NodeType[]> = {
     NodeType.EMPTY,
     NodeType.SEND_EMAIL_AND_AWAIT_REPLY,
     NodeType.HTTP_REQUEST,
+    NodeType.DELAY,
+    NodeType.FILTER,
   ],
 };
 
@@ -34,7 +36,7 @@ export function getNodeOptions(nodeType: NodeType): NodeOption[] {
       {
         nodeType: NodeType.MANUAL_TRIGGER,
         title: "Manual",
-        description: "Run Manually upon clicking the Trigger.",
+        description: "Start when you click Run.",
         form: nodesFormConfig[NodeType.MANUAL_TRIGGER],
       },
       {
@@ -60,9 +62,21 @@ export function getNodeOptions(nodeType: NodeType): NodeOption[] {
       },
       {
         nodeType: NodeType.HTTP_REQUEST,
-        title: "Send an http request",
-        description: "Send an http request",
+        title: "Send to webhook / API",
+        description: "Send data to another app or endpoint.",
         form: nodesFormConfig[NodeType.HTTP_REQUEST],
+      },
+      {
+        nodeType: NodeType.DELAY,
+        title: "Delay",
+        description: "Pause before the next step",
+        form: nodesFormConfig[NodeType.DELAY],
+      },
+      {
+        nodeType: NodeType.FILTER,
+        title: "Filter",
+        description: "Continue only when a condition passes",
+        form: nodesFormConfig[NodeType.FILTER],
       },
     ];
   } else {
@@ -70,16 +84,36 @@ export function getNodeOptions(nodeType: NodeType): NodeOption[] {
   }
 }
 
+export function getDirectNodeFormType(nodeType: NodeType) {
+  if (
+    nodeType === NodeType.SEND_EMAIL ||
+    nodeType === NodeType.SEND_EMAIL_AND_AWAIT_REPLY ||
+    nodeType === NodeType.WEBHOOK_TRIGGER ||
+    nodeType === NodeType.HTTP_REQUEST ||
+    nodeType === NodeType.DELAY ||
+    nodeType === NodeType.FILTER
+  ) {
+    return nodeType;
+  }
+  return undefined;
+}
+
 export function getPanelTitle(nodeType: NodeType) {
+  if (getDirectNodeFormType(nodeType)) {
+    return "Set up this step";
+  }
   if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL_TRIGGER) {
     return "What triggers this workflow?";
   }
-  return "What does this Node Do ?";
+  return "Choose a step type";
 }
 
 export function getPanelDescription(nodeType: NodeType) {
+  if (getDirectNodeFormType(nodeType)) {
+    return "Add the details this step needs before running.";
+  }
   if (nodeType === NodeType.INITIAL || nodeType === NodeType.MANUAL_TRIGGER) {
-    return "A trigger is a step that starts your workflow";
+    return "Choose how this workflow starts.";
   }
   return "Choose what step you want this node to perform.";
 }

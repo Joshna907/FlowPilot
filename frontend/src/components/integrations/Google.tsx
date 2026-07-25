@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/utils";
+import { Chrome } from "lucide-react";
 
 async function initGoogleOAuth() {
   const url = `${process.env.NEXT_PUBLIC_API_BASE}/auth/google/init`;
@@ -8,5 +9,10 @@ async function initGoogleOAuth() {
 }
 
 export function GoogleIntegration() {
-  return <Button onClick={initGoogleOAuth}>+</Button>;
+  return (
+    <Button onClick={initGoogleOAuth} variant="outline">
+      <Chrome />
+      Connect Google
+    </Button>
+  );
 }

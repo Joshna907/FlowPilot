@@ -6,3 +6,4 @@ export { WebhookTriggerNode } from "./WebhookTrigger";
 export { EmailNode } from "./Email";
 export { SendEmailAndAwaitReplyNode } from "./SendEmailAndAwaitReply";
 export { HttpRequestNode } from "./HttpRequest";
+export { FlowControlNode } from "./FlowControl";

@@ -1,7 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Filter, Grid, List, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  AudioLines,
+  Filter,
+  Grid,
+  List,
+  Search,
+  Sparkles,
+  Workflow,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { WorkflowCard } from "./WorkflowCard";
@@ -14,13 +25,26 @@ import {
 } from "@/components/ui/select";
 import { ApiWorkflow } from "../types";
 import { CreateWorkflowDialog } from "@/components/workflow/CreateWorkflow";
+import {
+  buildTemplateCreatePayload,
+  workflowTemplates,
+  type WorkflowTemplate,
+} from "@/lib/workflowTemplates";
+import { api } from "@/lib/utils";
+import { removeWorkflowById, replaceWorkflowById } from "./workflowListState";
 
 export function WorkflowGrid({ workflows }: { workflows: ApiWorkflow[] }) {
+  const router = useRouter();
+  const [workflowItems, setWorkflowItems] = useState(workflows);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const filteredWorkflows = workflows.filter((workflow) => {
+  useEffect(() => {
+    setWorkflowItems(workflows);
+  }, [workflows]);
+
+  const filteredWorkflows = workflowItems.filter((workflow) => {
     const matchesSearch = workflow.name
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
@@ -34,15 +58,53 @@ export function WorkflowGrid({ workflows }: { workflows: ApiWorkflow[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center space-x-2">
-          <Zap className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold">Workflows</h1>
+      <div className="rounded-xl border border-[var(--flow-border)] bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[rgba(29,87,247,0.12)] px-3 py-1 text-sm font-medium text-[var(--flow-primary)]">
+              <AudioLines className="size-4" />
+              Voice-first automation
+            </div>
+            <div>
+              <h1 className="text-3xl font-semibold tracking-normal">
+                Workflow cockpit
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--flow-muted)]">
+                Build, inspect, and run automations. Start from a blank canvas
+                or create a workflow first, then let Voice Builder draft the
+                steps.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <CreateWorkflowDialog buttonLabel="Create with voice" startWithVoice />
+            <CreateWorkflowDialog
+              buttonLabel="New workflow"
+              buttonVariant="outline"
+            />
+          </div>
         </div>
-        <p className="text-muted-foreground">
-          Manage and automate your processes with beautiful workflows
-        </p>
       </div>
+
+      <section className="rounded-xl border border-[var(--flow-border)] bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Start from a template</h2>
+            <p className="mt-1 text-sm text-[var(--flow-muted)]">
+              Interview-ready flows with real config checkpoints.
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {workflowTemplates.map((template) => (
+            <TemplateCard
+              key={template.key}
+              template={template}
+              onCreated={(workflowId) => router.push(`/workflow/${workflowId}`)}
+            />
+          ))}
+        </div>
+      </section>
 
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex flex-1 items-center space-x-4 max-w-md">
@@ -89,8 +151,6 @@ export function WorkflowGrid({ workflows }: { workflows: ApiWorkflow[] }) {
             </Button>
           </div>
 
-          <CreateWorkflowDialog />
-          
         </div>
       </div>
 
@@ -115,26 +175,93 @@ export function WorkflowGrid({ workflows }: { workflows: ApiWorkflow[] }) {
               className="animate-fade-in"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <WorkflowCard workflow={workflow} />
+              <WorkflowCard
+                workflow={workflow}
+                onChanged={(updatedWorkflow) =>
+                  setWorkflowItems((items) =>
+                    replaceWorkflowById(items, updatedWorkflow),
+                  )
+                }
+                onDeleted={(workflowId) =>
+                  setWorkflowItems((items) =>
+                    removeWorkflowById(items, workflowId),
+                  )
+                }
+              />
             </div>
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-12 space-y-4">
-          <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center">
-            <Zap className="h-12 w-12 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--flow-border)] bg-white py-14 space-y-4">
+          <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-[var(--flow-canvas)]">
+            <Workflow className="h-10 w-10 text-[var(--flow-primary)]" />
           </div>
           <div className="text-center space-y-2">
-            <h3 className="text-lg font-semibold">No workflows found</h3>
+            <h3 className="text-lg font-semibold">No workflows yet</h3>
             <p className="text-muted-foreground max-w-sm">
               {searchTerm || filterStatus !== "all"
                 ? "Try adjusting your search or filter criteria."
-                : "Get started by creating your first workflow automation."}
+                : "Create one, open the editor, and ask Voice Builder to draft the first automation."}
             </p>
           </div>
-          {!searchTerm && filterStatus === "all" && <CreateWorkflowDialog />}
+          <div className="flex flex-wrap justify-center gap-2 text-xs text-[var(--flow-muted)]">
+            {["Send a follow-up email", "Call my CRM webhook", "Wait for a reply"].map(
+              (prompt) => (
+                <span
+                  key={prompt}
+                  className="rounded-full border border-[var(--flow-border)] px-3 py-1"
+                >
+                  <Sparkles className="mr-1 inline size-3" />
+                  {prompt}
+                </span>
+              ),
+            )}
+          </div>
+          {!searchTerm && filterStatus === "all" && (
+            <CreateWorkflowDialog buttonLabel="Create with voice" startWithVoice />
+          )}
         </div>
       )}
     </div>
+  );
+}
+
+function TemplateCard({
+  template,
+  onCreated,
+}: {
+  template: WorkflowTemplate;
+  onCreated: (workflowId: string) => void;
+}) {
+  const createWorkflow = useMutation({
+    mutationFn: () => api.post("/workflow/create", buildTemplateCreatePayload(template)),
+    onSuccess: ({ data }) => {
+      if (!data.success) {
+        toast.error("Unable to create template");
+        return;
+      }
+      toast.success("Template created");
+      onCreated(data.data.workflow.id);
+    },
+    onError: () => toast.error("Unable to create template"),
+  });
+
+  return (
+    <button
+      className="rounded-lg border border-[var(--flow-border)] bg-[var(--flow-bg)] p-4 text-left transition hover:-translate-y-0.5 hover:border-[var(--flow-primary)] hover:bg-white hover:shadow-sm"
+      disabled={createWorkflow.isPending}
+      onClick={() => createWorkflow.mutate()}
+    >
+      <div className="flex items-center gap-2 text-sm font-semibold">
+        <Sparkles className="size-4 text-[var(--flow-primary)]" />
+        {template.name}
+      </div>
+      <p className="mt-2 text-xs leading-5 text-[var(--flow-muted)]">
+        {template.description}
+      </p>
+      <div className="mt-3 rounded-md bg-white px-2 py-1 text-xs text-[var(--flow-muted)]">
+        {template.prompt}
+      </div>
+    </button>
   );
 }

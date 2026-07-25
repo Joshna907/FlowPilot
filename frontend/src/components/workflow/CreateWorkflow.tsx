@@ -18,9 +18,17 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { api } from "@/lib/utils";
+import { api, cn } from "@/lib/utils";
 
-export function CreateWorkflowDialog() {
+export function CreateWorkflowDialog({
+  buttonLabel = "New Workflow",
+  buttonVariant = "default",
+  startWithVoice = false,
+}: {
+  buttonLabel?: string;
+  buttonVariant?: "default" | "outline";
+  startWithVoice?: boolean;
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
 
@@ -30,34 +38,55 @@ export function CreateWorkflowDialog() {
     },
     onSuccess: ({ data }) => {
       if (!data.success) {
-        toast.error("error creating");
+        toast.error("Could not create workflow");
+        return;
       }
-      toast.success("workflow created successfully");
+      toast.success("Workflow created");
       const workflowId = data.data.workflow.id;
-      router.push(`/workflow/${workflowId}`);
+      router.push(`/workflow/${workflowId}${startWithVoice ? "?voice=1" : ""}`);
+    },
+    onError: () => {
+      toast.error("Could not create workflow. Check that the app is running.");
     },
   });
 
   function handleSubmit() {
+    if (!name.trim()) {
+      toast.error("Add a workflow name");
+      return;
+    }
     createWorkflow.mutate({ name });
   }
 
   return (
     <Dialog>
-      <form>
-        <DialogTrigger asChild>
-          <Button
-            size="lg"
-            className="bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-200"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Workflow
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
+      <DialogTrigger asChild>
+        <Button
+          size="lg"
+          variant={buttonVariant}
+          className={cn(
+            "shadow-lg transition-all duration-200 hover:shadow-xl",
+            buttonVariant === "default" &&
+              "bg-primary hover:bg-primary/90",
+          )}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          {buttonLabel}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSubmit();
+          }}
+          className="space-y-4"
+        >
           <DialogHeader>
-            <DialogTitle>Create Workflow</DialogTitle>
-            <DialogDescription>Create a new Workflow</DialogDescription>
+            <DialogTitle>Create workflow</DialogTitle>
+            <DialogDescription>
+              Name it now. You can build it from voice in the editor.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid gap-3">
@@ -76,12 +105,15 @@ export function CreateWorkflowDialog() {
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button onClick={handleSubmit} type="submit">
-              Create
+            <Button
+              disabled={createWorkflow.isPending}
+              type="submit"
+            >
+              {createWorkflow.isPending ? "Creating" : "Create"}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </form>
+        </form>
+      </DialogContent>
     </Dialog>
   );
 }

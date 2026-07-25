@@ -8,7 +8,7 @@ export function SendEmailAndAwaitReplyNode(
 ) {
   return (
     <CustomNode nodeId={node.id}>
-      <Button>
+      <Button className="flow-node-icon" variant="ghost" size="icon">
         <MailCheck />
         <Reply />
       </Button>

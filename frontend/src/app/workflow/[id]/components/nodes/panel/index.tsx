@@ -10,6 +10,7 @@ import { useConfigPanel } from "@/stores";
 import { NodeType, useWorkflow } from "@/stores/useWorkflowStore";
 import { ArrowRight } from "lucide-react";
 import {
+  getDirectNodeFormType,
   getNodeOptions,
   getPanelDescription,
   getPanelTitle,
@@ -49,6 +50,8 @@ export function NodesPanel() {
     return <div>could not determine selected node type</div>;
 
   const nodeOptions = getNodeOptions(selectedNodeType);
+  const activeNodeForm =
+    currentConfigPanelNodeForm ?? getDirectNodeFormType(selectedNodeType);
 
   return (
     <Sheet
@@ -67,8 +70,8 @@ export function NodesPanel() {
           </SheetDescription>
         </SheetHeader>
         <div>
-          {currentConfigPanelNodeForm
-            ? nodesFormConfig[currentConfigPanelNodeForm]
+          {activeNodeForm
+            ? nodesFormConfig[activeNodeForm]
             : nodeOptions.map((option, index) => {
                 return (
                   <PanelItem

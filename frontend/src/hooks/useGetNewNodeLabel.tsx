@@ -10,6 +10,8 @@ export const defaultNodeLabel = {
   [NodeType.SEND_EMAIL]: "SEND_EMAIL_NODE",
   [NodeType.SEND_EMAIL_AND_AWAIT_REPLY]: "SEND_EMAIL_AND_AWAIT_REPLY_NODE",
   [NodeType.HTTP_REQUEST]: "HTTP_REQUEST_NODE",
+  [NodeType.DELAY]: "DELAY_NODE",
+  [NodeType.FILTER]: "FILTER_NODE",
 } as const;
 
 export function useGetDefaultNodeLabel(nodeType: NodeType) {

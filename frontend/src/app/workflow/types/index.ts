@@ -7,6 +7,7 @@ export type ApiWorkflow = {
   edges: ApiEdge[];
   createdAt: string;
   updatedAt: string;
+  publishedAt: string | null;
   archivedAt: string | null;
 };
 

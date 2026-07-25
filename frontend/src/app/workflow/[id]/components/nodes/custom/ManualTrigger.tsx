@@ -29,7 +29,7 @@ export function ManualTriggerNode(node: NodeProps<Node<{ label: string }>>) {
 
   return (
     <CustomNode onClick={handleExecuteWorkflow} nodeId={node.id}>
-      <Button>
+      <Button className="flow-node-icon" variant="ghost" size="icon">
         <MousePointerClick />
       </Button>
     </CustomNode>

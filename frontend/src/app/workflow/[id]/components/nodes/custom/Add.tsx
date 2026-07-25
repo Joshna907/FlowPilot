@@ -6,7 +6,7 @@ import { CustomNode } from "./CustomNode";
 export function AddNode(node: NodeProps<Node<{ label: string }>>) {
   const addNewEmptyNode = useWorkflow((state) => state.addNewEmptyNode);
   return (
-    <CustomNode preventDefault className="size-6" nodeId={node.id}>
+    <CustomNode preventDefault className="min-w-0 rounded-full p-1" nodeId={node.id}>
       <Button
         size="icon-xs"
         className="text-xs"
