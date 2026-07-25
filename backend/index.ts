@@ -6,6 +6,7 @@ import {
   executionRouter,
   googleAuthRouter,
   webhookRouter,
+  voiceRouter,
   workflowRouter,
 } from "./routes";
 import { authMiddleware } from "./middlewares/auth";
@@ -27,6 +28,7 @@ app.use("/execution", executionRouter);
 app.use("/credential", credentialRouter);
 app.use("/webhook", webhookRouter);
 app.use("/accounts", accountsRouter);
+app.use("/voice", voiceRouter);
 
 app.use(errorHandler);
 const PORT = process.env.PORT || 3001;

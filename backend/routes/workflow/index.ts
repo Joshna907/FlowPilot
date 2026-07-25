@@ -4,7 +4,6 @@ import z from "zod";
 import { edgeSchema, nodeSchema, nodeWebhookMetadatSchema } from "./types";
 import { prisma } from "../../utils/db";
 import { ErrorMessage } from "../../utils/errorMessage";
-import _ from "lodash";
 import {
   EdgeType,
   NodeType,
@@ -25,24 +24,59 @@ router.get("/list", async (req, res) => {
   return res.json({ success: true, data: { workflows } });
 });
 
-const createWorkflowSchema = z.object({ name: z.string() });
+const createWorkflowSchema = z.object({
+  name: z.string(),
+  nodes: z.array(nodeSchema).optional(),
+  edges: z.array(edgeSchema).optional(),
+});
 
 router.post("/create", async (req, res) => {
   assert(req.user);
+  const userId = req.user.id;
   const { data, success } = createWorkflowSchema.safeParse(req.body);
   if (!success) {
     return res
       .status(400)
       .json({ success: false, error: ErrorMessage.PARSING });
   }
-  const workflow = await prisma.workflow.create({
-    data: {
-      userId: req.user.id,
-      name: data.name,
-    },
-    select: {
-      id: true,
-    },
+  const workflow = await prisma.$transaction(async (tx) => {
+    const createdWorkflow = await tx.workflow.create({
+      data: {
+        userId,
+        name: data.name,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (data.nodes?.length) {
+      await tx.node.createMany({
+        data: data.nodes.map((node) => ({
+          id: node.id,
+          workflowId: createdWorkflow.id,
+          nodeType: node.nodeType,
+          positionX: node.positionX,
+          positionY: node.positionY,
+          metadata: node.metadata as Prisma.InputJsonValue,
+        })),
+      });
+    }
+
+    if (data.edges?.length) {
+      await tx.edge.createMany({
+        data: data.edges.map((edge) => ({
+          id: edge.id,
+          workflowId: createdWorkflow.id,
+          sourceNodeId: edge.sourceNodeId,
+          targetNodeId: edge.targetNodeId,
+          edgeType: edge.edgeType as EdgeType,
+          metadata: edge.metadata as Prisma.InputJsonValue,
+        })),
+      });
+    }
+
+    return createdWorkflow;
   });
   if (!workflow) {
     return res.json({ success: false, error: "unable to create a workflow" });
@@ -50,11 +84,79 @@ router.post("/create", async (req, res) => {
   return res.json({ success: true, data: { workflow } });
 });
 
+router.post("/publish/:id", async (req, res) => {
+  assert(req.user);
+  const existingWorkflow = await prisma.workflow.findFirst({
+    where: { id: req.params.id, userId: req.user.id },
+  });
+  if (!existingWorkflow) {
+    return res.status(404).json({ success: false, error: "workflow not found" });
+  }
+  const workflow = await prisma.workflow.update({
+    where: { id: existingWorkflow.id },
+    data: { publishedAt: new Date() },
+  });
+  return res.json({ success: true, data: { workflow } });
+});
+
+router.post("/archive/:id", async (req, res) => {
+  assert(req.user);
+  const existingWorkflow = await prisma.workflow.findFirst({
+    where: { id: req.params.id, userId: req.user.id },
+  });
+  if (!existingWorkflow) {
+    return res.status(404).json({ success: false, error: "workflow not found" });
+  }
+
+  const workflow = await prisma.workflow.update({
+    where: { id: existingWorkflow.id },
+    data: { archivedAt: new Date() },
+  });
+
+  return res.json({ success: true, data: { workflow } });
+});
+
+router.post("/unarchive/:id", async (req, res) => {
+  assert(req.user);
+  const existingWorkflow = await prisma.workflow.findFirst({
+    where: { id: req.params.id, userId: req.user.id },
+  });
+  if (!existingWorkflow) {
+    return res.status(404).json({ success: false, error: "workflow not found" });
+  }
+
+  const workflow = await prisma.workflow.update({
+    where: { id: existingWorkflow.id },
+    data: { archivedAt: null },
+  });
+
+  return res.json({ success: true, data: { workflow } });
+});
+
+router.delete("/:id", async (req, res) => {
+  assert(req.user);
+  const existingWorkflow = await prisma.workflow.findFirst({
+    where: { id: req.params.id, userId: req.user.id },
+  });
+  if (!existingWorkflow) {
+    return res.status(404).json({ success: false, error: "workflow not found" });
+  }
+
+  await prisma.workflow.delete({
+    where: { id: existingWorkflow.id },
+  });
+
+  return res.json({
+    success: true,
+    data: { workflowId: existingWorkflow.id },
+  });
+});
+
 router.get("/:id", async (req, res) => {
   assert(req.user);
   const workflowId = req.params.id;
-  const workflow = await prisma.workflow.findUnique({
-    where: { id: workflowId },
+  const workflow = await prisma.workflow.findFirst({
+    where: { id: workflowId, userId: req.user.id },
     include: {
       nodes: true,
       edges: true,
@@ -96,8 +198,8 @@ router.put("/update/:id", async (req, res) => {
       },
     });
 
-    const isNodesProvided = !_.isEmpty(data.nodes);
-    const isEdgesProvided = !_.isEmpty(data.edges);
+    const isNodesProvided = data.nodes !== undefined;
+    const isEdgesProvided = data.edges !== undefined;
 
     const incomingNodeIds = new Set((data.nodes ?? []).map((n) => n.id));
     const incomingEdgeIds = new Set((data.edges ?? []).map((e) => e.id));
@@ -237,6 +339,10 @@ router.put("/update/:id", async (req, res) => {
 
   return res.json({
     success: true,
-    data: { workflow: result.updatedWorkflow },
+    data: {
+      workflow: result.updatedWorkflow,
+      nodes: result.updatedNodes,
+      edges: result.updatedEdges,
+    },
   });
 });
