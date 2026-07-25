@@ -91,7 +91,7 @@ Open:
 http://localhost:3000
 ```
 
-## Demo Script
+## How to Use
 
 1. Open FlowPilot.
 2. Create a new workflow.
@@ -104,19 +104,4 @@ http://localhost:3000
 9. Click `Save`.
 10. Click `Run workflow`.
 
-## Deployment Notes
 
-- Deploy `frontend` to Vercel, Netlify, or any Next.js host.
-- Deploy `backend` as a Node service.
-- Deploy `execution` as a separate worker service.
-- Use managed Postgres and Redis in production.
-- Store API keys and webhook secrets in environment variables.
-
-## Status
-
-This is a portfolio/demo project focused on:
-
-- voice-first workflow creation
-- Zapier-style editor UX
-- real Slack/Discord/webhook execution paths
-- explainable backend-worker architecture
