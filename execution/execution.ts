@@ -22,6 +22,9 @@ export const nodeCategories: Record<NodeCategory, NodeType[]> = {
     NodeType.SEND_EMAIL,
     NodeType.EMPTY,
     NodeType.SEND_EMAIL_AND_AWAIT_REPLY,
+    NodeType.HTTP_REQUEST,
+    NodeType.DELAY,
+    NodeType.FILTER,
   ],
 };
 
@@ -30,6 +33,7 @@ export class ExecutionManager {
   private executionId: string;
   private output: Record<string, unknown> = {};
   private executionStack: NodeWithIncomingAndOutgoingEdges[] = [];
+  private failedNodeId: string | undefined;
 
   constructor(workflow: WorkflowWithNodesAndEdges, executionId: string) {
     this.workflow = workflow;
@@ -48,6 +52,13 @@ export class ExecutionManager {
   }
 
   private async concludeExecution({ success }: { success: boolean }) {
+    this.output.__summary = {
+      status: success ? ExecutionStatus.SUCCEEDED : ExecutionStatus.FAILED,
+      failedNodeId: this.failedNodeId,
+      completedNodeIds: Object.keys(this.output).filter(
+        (nodeId) => !nodeId.startsWith("__"),
+      ),
+    };
     const updatedExecution = await prisma.execution.update({
       where: { id: this.executionId },
       data: {
@@ -159,6 +170,33 @@ export class ExecutionManager {
     return value;
   }
 
+  private getErrorMessage(error: unknown) {
+    if (error instanceof Error) return error.message;
+    if (typeof error === "string") return error;
+    return "Unknown execution error";
+  }
+
+  private isNodeDisabled(node: NodeWithIncomingAndOutgoingEdges) {
+    const metadata = node.metadata;
+    return (
+      metadata &&
+      typeof metadata === "object" &&
+      (metadata as Record<string, unknown>).disabled === true
+    );
+  }
+
+  private shouldContinueFromNode(
+    node: NodeWithIncomingAndOutgoingEdges,
+    result: unknown,
+  ) {
+    if (node.nodeType !== NodeType.FILTER) return true;
+    return (
+      result &&
+      typeof result === "object" &&
+      (result as Record<string, unknown>).passed === true
+    );
+  }
+
   public async execute() {
     try {
       // find trigger node based on the type
@@ -192,14 +230,26 @@ export class ExecutionManager {
         const currentNode = this.executionStack.pop();
         assert(currentNode);
         console.log("currently executing -", currentNode);
-        const executor = executableNodes[currentNode.nodeType];
-        if (executor) {
-          const metadata = currentNode.metadata;
-          const resolvedMetadata = this.resolveMetadataValues(
-            metadata,
-          ) as Record<string, unknown>;
-          const result = await executor(resolvedMetadata);
-          this.output[currentNode.id] = result;
+        if (this.isNodeDisabled(currentNode)) {
+          this.output[currentNode.id] = {
+            skipped: true,
+            reason: "disabled",
+          };
+        } else {
+          const executor = executableNodes[currentNode.nodeType];
+          if (executor) {
+            this.failedNodeId = currentNode.id;
+            const metadata = currentNode.metadata;
+            const resolvedMetadata = this.resolveMetadataValues(
+              metadata,
+            ) as Record<string, unknown>;
+            const result = await executor(resolvedMetadata);
+            this.output[currentNode.id] = result;
+            this.failedNodeId = undefined;
+            if (!this.shouldContinueFromNode(currentNode, result)) {
+              continue;
+            }
+          }
         }
 
         const outgoingNodesFromCurrentNode = this.getOutgoingNodes(currentNode);
@@ -211,6 +261,10 @@ export class ExecutionManager {
       await this.concludeExecution({ success: true });
     } catch (error) {
       console.error({ error });
+      this.output.__error = {
+        failedNodeId: this.failedNodeId,
+        message: this.getErrorMessage(error),
+      };
       await this.concludeExecution({ success: false });
     }
   }

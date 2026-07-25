@@ -1,5 +1,6 @@
 import { NodeType } from "../../backend/generated/prisma";
 import { executeHttpRequest } from "./httpRequest";
+import { executeDelay, executeFilter } from "./flowControl";
 import { sendEmail } from "./sendEmail";
 import { sendEmailAndAwaitReply } from "./sendMailAndAwaitReply";
 
@@ -18,4 +19,6 @@ export const executableNodes: Record<
   [NodeType.WEBHOOK_TRIGGER]: placeholder,
   [NodeType.SEND_EMAIL_AND_AWAIT_REPLY]: sendEmailAndAwaitReply,
   [NodeType.HTTP_REQUEST]: executeHttpRequest,
+  [NodeType.DELAY]: executeDelay,
+  [NodeType.FILTER]: executeFilter,
 };
